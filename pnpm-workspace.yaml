@@ -1,7 +1,8 @@
 packages:
   - 'apps/*'
 
-# Scripts d'installation autorisés (pnpm les bloque par défaut).
+# Scripts d'installation autorisés : pnpm 10+ les bloque tous par défaut et
+# échoue avec ERR_PNPM_IGNORED_BUILDS si on ne tranche pas explicitement.
 # esbuild : requis par Vite. sharp : optimisation d'images d'Astro.
 allowBuilds:
   esbuild: true

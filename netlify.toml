@@ -8,9 +8,9 @@
   publish = "apps/web/dist"
 
 [build.environment]
-  # Version alignée sur les `engines` réels des dépendances : plusieurs
-  # paquets (eslint 10, astro-eslint-parser) refusent Node 22.12.
-  NODE_VERSION = "24.16.0"
+  # On déploie sur le runtime réellement vérifié en local. Node 22.12,
+  # recopié de Lyon Négoce Auto, faisait échouer l'installation.
+  NODE_VERSION = "26.0.0"
   # Pas de PNPM_VERSION : le champ `packageManager` du package.json fait foi.
   # Deux sources de vérité finissent toujours par diverger.
 
