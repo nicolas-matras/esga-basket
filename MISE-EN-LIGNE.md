@@ -28,7 +28,7 @@ Ne pas indiquer de « base directory » : la commande part de la racine du dép�
 | --- | --- |
 | `PUBLIC_SANITY_PROJECT_ID` | `cftz7b5y` |
 | `PUBLIC_SANITY_DATASET` | `production` |
-| `PUBLIC_SITE_URL` | l'URL définitive, par exemple `https://esgabasket.fr` |
+| `PUBLIC_SITE_URL` | `https://esga-genas.netlify.app` — puis le domaine définitif |
 | `PUBLIC_ENV` | `production` |
 
 ⚠️ **`PUBLIC_ENV` conditionne l'indexation.** Toute valeur autre que
@@ -37,8 +37,13 @@ voulu : les déploiements de préversion ne doivent pas se retrouver dans Google
 Laisser la variable vide sur les branches de préversion, la renseigner
 uniquement en production.
 
-`PUBLIC_SITE_URL` sert au canonical, au sitemap et aux balises de partage : une
-valeur fausse produit un sitemap qui pointe ailleurs.
+`PUBLIC_SITE_URL` sert au canonical, au sitemap et aux balises de partage.
+**Coller un texte qui n'est pas une URL absolue** (un `<placeholder>`, un nom de
+domaine sans `https://`) ne casse plus le build depuis que `apps/web/src/lib/site.ts`
+valide la valeur — mais le build affiche alors un avertissement sur chaque page
+et retombe sur `http://localhost:4321`, ce qui produit un sitemap et des
+canoniques faux. Si l'avertissement apparaît dans le log, la variable est à
+corriger avant d'ouvrir au public.
 
 Aucun jeton Sanity n'est nécessaire pour le build : le dataset `production` est
 public et le site ne lit que le contenu publié.
