@@ -8,9 +8,9 @@
   publish = "apps/web/dist"
 
 [build.environment]
-  # On déploie sur le runtime réellement vérifié en local. Node 22.12,
-  # recopié de Lyon Négoce Auto, faisait échouer l'installation.
-  NODE_VERSION = "26.0.0"
+  # Seule version testée où l'installation passe sur l'image Netlify :
+  # 22.12 échoue (engines des dépendances), 26.0 n'est pas disponible.
+  NODE_VERSION = "24.16.0"
   # Pas de PNPM_VERSION : le champ `packageManager` du package.json fait foi.
   # Deux sources de vérité finissent toujours par diverger.
 
