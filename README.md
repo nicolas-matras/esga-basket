@@ -103,7 +103,7 @@ et les transitions.
 | Sujet | État |
 | --- | --- |
 | Formulaire de contact | Bascule vers un `mailto:` pré-rempli. À brancher sur Brevo. |
-| Déploiement | Rien n'est déployé. Netlify à connecter. |
+| Déploiement | `netlify.toml` prêt, site non encore créé. Voir [MISE-EN-LIGNE.md](MISE-EN-LIGNE.md). |
 | Photos | Tous les cadres affichent leur mention « photo à fournir ». |
 | Tarifs | Montants vides : le site affiche « à définir », comme la maquette. |
 | Équipes | 6 des 15 saisies — seules celles que la maquette nomme. |

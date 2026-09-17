@@ -14,7 +14,6 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/netlify": "^8.2.5",
     "@astrojs/sitemap": "^3.7.4",
     "@portabletext/to-html": "^6.0.0",
     "@sanity/client": "^8.6.2",

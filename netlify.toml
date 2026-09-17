@@ -1,0 +1,26 @@
+# Déploiement du site public. Rien d'autre n'est déployé ici :
+# le Studio Sanity s'héberge chez Sanity (`pnpm --filter @esga/studio deploy`).
+
+[build]
+  # Le monorepo est à la racine ; on construit uniquement l'app web.
+  command = "pnpm install --frozen-lockfile && pnpm --filter @esga/web build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "22.12.0"
+  PNPM_VERSION = "12.4.2"
+  # Astro lit PUBLIC_SITE_URL pour le canonical, le sitemap et le robots.txt.
+  # Les variables Sanity se saisissent dans l'interface Netlify, pas ici.
+
+# Les polices sont versionnées par leur contenu et ne changent jamais.
+[[headers]]
+  for = "/polices/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
