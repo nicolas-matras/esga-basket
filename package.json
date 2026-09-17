@@ -21,7 +21,8 @@
     "format:check": "prettier --check .",
     "check": "pnpm --filter @esga/web check && pnpm --filter @esga/studio verifier && pnpm lint && pnpm format:check",
     "setup:env": "node tools/setup-env.mjs",
-    "seed": "node tools/seed/index.mjs"
+    "seed": "node tools/seed/index.mjs",
+    "seed:photos": "node tools/seed/photos.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

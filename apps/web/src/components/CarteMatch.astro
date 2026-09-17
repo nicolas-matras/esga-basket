@@ -23,10 +23,12 @@ export interface Props {
 const { match, vedette = false } = Astro.props;
 
 const partage = partageScore(match);
-const rebours = match.statut === 'a-venir' ? compteARebours(match.debut) : null;
+const rebours = partage.jouable ? null : compteARebours(match.debut);
 const logo = urlImage(match.logoAdversaire, 120);
 const competition = match.competition?.libelle ?? match.equipe?.championnat ?? '';
-const surtitre = [match.equipe?.nom, competition].filter(Boolean).join(' · ');
+const surtitre = [match.equipe?.nom, competition, match.journee ? `J${match.journee}` : null]
+  .filter(Boolean)
+  .join(' · ');
 const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} · extérieur`;
 ---
 
@@ -34,7 +36,6 @@ const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} 
   <header class="match__entete">
     <span class="surtitre">{surtitre}</span>
     {rebours && <span class="match__rebours">{rebours}</span>}
-    {match.statut === 'en-cours' && <span class="match__live">Live{match.periode ? ` · ${match.periode}` : ''}</span>}
   </header>
 
   {

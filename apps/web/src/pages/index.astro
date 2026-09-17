@@ -15,6 +15,7 @@ import type { Actualite, Categorie, LigneClassement, Match } from '../lib/types'
 type Accueil = {
   surtitre?: string;
   titre?: string;
+  motAccentue?: string;
   intro?: string;
   ctaPrincipal?: { libelle?: string; url?: string };
   ctaVideo?: { libelle?: string; url?: string };
@@ -40,6 +41,25 @@ const matchs = await interroger<Match[]>(REQ_MATCHS_A_VENIR);
 const regroupements = await interroger<Categorie[]>(REQ_REGROUPEMENTS);
 const actualites = await interroger<Actualite[]>(REQ_ACTUALITES);
 
+/**
+ * La maquette met le dernier mot du titre en orange
+ * (« On joue tous pour le même <orange>maillot</orange> »).
+ * Le mot est éditable dans le Studio : on le découpe ici plutôt que de figer
+ * le markup. S'il n'est pas trouvé dans le titre, on affiche le titre tel quel.
+ */
+function decouperTitre(titre?: string, accent?: string) {
+  if (!titre) return null;
+  if (!accent) return { avant: titre, mot: '', apres: '' };
+  const i = titre.toLowerCase().lastIndexOf(accent.toLowerCase());
+  if (i === -1) return { avant: titre, mot: '', apres: '' };
+  return {
+    avant: titre.slice(0, i),
+    mot: titre.slice(i, i + accent.length),
+    apres: titre.slice(i + accent.length),
+  };
+}
+
+const titreDecoupe = decouperTitre(page?.titre, page?.motAccentue);
 const prochain = matchs[0];
 const suivants = matchs.slice(1, 4);
 const photoHeros = urlImage(page?.photo, 900, 1200);
@@ -52,17 +72,31 @@ const lignes = page?.classement?.releve?.lignes ?? [];
   page="accueil"
 >
   <!-- ---------- Héros ---------- -->
-  <section class="section heros">
-    <div class="contenu heros__grille">
+  <section class="heros">
+    <span class="heros__halo" aria-hidden="true"></span>
+    <span class="heros__trame" aria-hidden="true"></span>
+
+    <div class="heros__grille">
       <div>
         {page?.surtitre && <p class="heros__pastille">{page.surtitre}</p>}
-        <h1 class="heros__titre">{page?.titre}</h1>
-        {page?.intro && <p class="chapo">{page.intro}</p>}
+        {
+          titreDecoupe && (
+            <h1 class="heros__titre">
+              {titreDecoupe.avant}
+              {titreDecoupe.mot && <span class="heros__accent">{titreDecoupe.mot}</span>}
+              {titreDecoupe.apres}
+            </h1>
+          )
+        }
+        {page?.intro && <p class="heros__chapo">{page.intro}</p>}
 
         <div class="heros__actions">
           {
             page?.ctaPrincipal?.libelle && (
-              <a href={page.ctaPrincipal.url ?? '/inscriptions'} class="bouton bouton--principal">
+              <a
+                href={page.ctaPrincipal.url ?? '/inscriptions'}
+                class="bouton bouton--navy bouton--large"
+              >
                 {page.ctaPrincipal.libelle} →
               </a>
             )
@@ -71,7 +105,7 @@ const lignes = page?.classement?.releve?.lignes ?? [];
             page?.ctaVideo?.libelle && (
               <a
                 href={page.ctaVideo.url ?? '#'}
-                class="bouton bouton--secondaire"
+                class="bouton bouton--secondaire bouton--large"
                 aria-disabled={page.ctaVideo.url ? undefined : 'true'}
               >
                 ▶ {page.ctaVideo.libelle}
@@ -240,48 +274,121 @@ const lignes = page?.classement?.releve?.lignes ?? [];
 </Base>
 
 <style>
+  /*
+    Le héros de la maquette : fond gris très clair, halo bleu en haut à gauche,
+    trame verticale de 72 px, et une cascade d'apparitions.
+  */
   .heros {
-    padding-block: var(--e-section-large);
+    position: relative;
+    overflow: hidden;
+    background: var(--c-fond-doux);
+    border-bottom: 1px solid var(--c-bordure-douce);
   }
+  .heros__halo {
+    position: absolute;
+    top: -150px;
+    left: -110px;
+    width: 460px;
+    height: 460px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(30 66 168 / 0.14), transparent 70%);
+    animation: halo 7s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .heros__trame {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgb(12 27 74 / 0.04) 0 1px,
+      transparent 1px 72px
+    );
+    pointer-events: none;
+  }
+  @keyframes halo {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+  @keyframes monter {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   .heros__grille {
+    position: relative;
+    max-width: 1180px;
+    margin-inline: auto;
+    padding: clamp(34px, 5vw, 60px) var(--e-gouttiere) clamp(38px, 5vw, 54px);
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: clamp(24px, 4vw, 44px);
     align-items: center;
   }
+
   .heros__pastille {
-    display: inline-block;
-    font: 700 var(--t-etiquette) / 1 var(--f-mono);
-    letter-spacing: var(--ls-etiquette);
-    text-transform: uppercase;
-    color: var(--c-accent-texte);
-    background: color-mix(in srgb, var(--c-accent) 14%, transparent);
-    padding: 7px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-bordure);
     border-radius: var(--r-pilule);
+    padding: 7px 14px;
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette-large);
+    text-transform: uppercase;
+    color: var(--c-titre);
     margin: 0;
+    animation: monter 0.9s ease both;
   }
   .heros__titre {
     font: 400 var(--t-d1) / var(--t-d1-lh) var(--f-titre);
     letter-spacing: var(--ls-titre);
     text-transform: uppercase;
     color: var(--c-titre);
-    margin: var(--e-8) 0 0;
+    margin: 20px 0 0;
     text-wrap: balance;
+    animation: monter 0.9s 0.06s ease both;
+  }
+  /* Le mot que le club choisit de mettre en couleur. */
+  .heros__accent {
+    color: var(--c-accent);
+  }
+  .heros__chapo {
+    font: 400 var(--t-chapo) / var(--t-chapo-lh) var(--f-texte);
+    color: var(--c-texte);
+    max-width: 450px;
+    margin: 22px 0 0;
+    text-wrap: pretty;
+    animation: monter 0.9s 0.14s ease both;
   }
   .heros__actions {
     display: flex;
     gap: var(--e-4);
     flex-wrap: wrap;
-    margin-top: var(--e-9);
+    margin-top: 28px;
+    animation: monter 0.9s 0.2s ease both;
   }
   .heros__media {
     aspect-ratio: 3 / 4;
     border-radius: var(--r-2xl);
-    background: var(--c-fond-doux);
+    background: var(--c-surface);
     border: 1px solid var(--c-bordure);
     display: grid;
     place-items: center;
     overflow: hidden;
+    box-shadow: var(--o-carte);
+    animation: monter 0.9s 0.26s ease both;
   }
   .heros__media img {
     width: 100%;
@@ -301,11 +408,13 @@ const lignes = page?.classement?.releve?.lignes ?? [];
     margin: var(--e-11) 0 0;
     padding: var(--e-8) 0 0;
     border-top: 1px solid var(--c-bordure);
+    animation: monter 0.9s 0.3s ease both;
   }
+  /* Anton 40 px, navy — et non l'orange que j'avais mis. */
   .chiffres-cles__valeur {
     display: block;
-    font: 400 var(--t-n3) / 1 var(--f-titre);
-    color: var(--c-accent);
+    font: 400 var(--t-n1) / 1 var(--f-titre);
+    color: var(--c-titre);
     text-transform: uppercase;
   }
   .chiffres-cles__libelle {
@@ -416,7 +525,6 @@ const lignes = page?.classement?.releve?.lignes ?? [];
   }
 
   @media (max-width: 860px) {
-    .heros__grille,
     .grille-match {
       grid-template-columns: 1fr;
     }

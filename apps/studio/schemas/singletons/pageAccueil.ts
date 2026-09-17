@@ -28,6 +28,14 @@ export const pageAccueil = defineType({
       group: 'heros',
       validation: (r) => r.required(),
     }),
+    defineField({
+      name: 'motAccentue',
+      title: 'Mot mis en couleur',
+      type: 'string',
+      group: 'heros',
+      description:
+        'Un mot du titre à afficher en orange, comme « maillot » dans « On joue tous pour le même maillot ». Laisser vide pour un titre d’une seule couleur.',
+    }),
     defineField({ name: 'intro', title: 'Chapô', type: 'text', rows: 3, group: 'heros' }),
     defineField({
       name: 'ctaPrincipal',

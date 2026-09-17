@@ -8,6 +8,8 @@
  * Les identifiants sont fixes : rejouer `pnpm seed` remplace au lieu d'empiler.
  */
 
+import { SF1, SM1, SM2, versMatchs } from './calendriers.mjs';
+
 /** Saison en cours, telle qu'affichée par la maquette. */
 export const SAISON = '2026 / 2027';
 
@@ -46,23 +48,44 @@ export const categories = [
 ].map((c) => ({ ...c, _type: 'categorie', slug: { _type: 'slug', current: c.libelle.toLowerCase().replace(/é/g, 'e') } }));
 
 /**
- * Seules les équipes que la maquette nomme explicitement.
- * Le club en annonce 15 : les neuf autres sont à saisir dans le Studio.
+ * Les 16 équipes engagées en championnat 5×5, relevées sur la fiche FFBB du
+ * club. L'école de basket (plateaux U7/U9) n'y figure pas : elle ne joue pas
+ * de championnat.
+ *
+ * Nommage : niveau + genre + numéro quand le club en engage plusieurs dans la
+ * même catégorie. Modifiable dans le Studio si le club utilise d'autres noms.
  */
 export const equipes = [
-  { _id: 'eq-sm1', nom: 'SM1', categorie: 'cat-sr', championnat: 'Pré-régionale', ordre: 1 },
+  // Masculin
+  { _id: 'eq-sm1', nom: 'SM1', categorie: 'cat-sr', championnat: 'PRM poule A2', ordre: 1 },
   { _id: 'eq-sm2', nom: 'SM2', categorie: 'cat-sr', championnat: 'DM3 poule B', ordre: 2 },
-  { _id: 'eq-sf1', nom: 'SF1', categorie: 'cat-sr', championnat: 'DF2 poule B', ordre: 3 },
-  { _id: 'eq-u15m', nom: 'U15M', categorie: 'cat-u15', championnat: 'Départemental', ordre: 4 },
-  { _id: 'eq-u13f', nom: 'U13F', categorie: 'cat-u13', championnat: 'Plateau', ordre: 5 },
-  { _id: 'eq-u11f', nom: 'U11F', categorie: 'cat-u11', championnat: 'Plateau', ordre: 6 },
+  { _id: 'eq-u18m1', nom: 'U18M 1', categorie: 'cat-u18', championnat: 'DMU18-2 poule A', ordre: 3 },
+  { _id: 'eq-u18m2', nom: 'U18M 2', categorie: 'cat-u18', championnat: 'DMU18-6 poule préligue F', ordre: 4 },
+  { _id: 'eq-u15m1', nom: 'U15M 1', categorie: 'cat-u15', championnat: 'DMU15-2 poule D', ordre: 5 },
+  { _id: 'eq-u15m2', nom: 'U15M 2', categorie: 'cat-u15', championnat: 'DMU15-3 poule C', ordre: 6 },
+  { _id: 'eq-u13m1', nom: 'U13M 1', categorie: 'cat-u13', championnat: 'DMU13-2 poule E', ordre: 7 },
+  { _id: 'eq-u13m2', nom: 'U13M 2', categorie: 'cat-u13', championnat: 'DMU13-3 poule E', ordre: 8 },
+  // Féminin
+  { _id: 'eq-sf1', nom: 'SF1', categorie: 'cat-sr', championnat: 'DF2 poule B', ordre: 9 },
+  { _id: 'eq-u18f', nom: 'U18F', categorie: 'cat-u18', championnat: 'DFU18-2 poule C', ordre: 10 },
+  { _id: 'eq-u15f', nom: 'U15F', categorie: 'cat-u15', championnat: 'DFU15 poule A', ordre: 11 },
+  { _id: 'eq-u13f1', nom: 'U13F 1', categorie: 'cat-u13', championnat: 'DFU13-2 poule B', ordre: 12 },
+  { _id: 'eq-u13f2', nom: 'U13F 2', categorie: 'cat-u13', championnat: 'DFU13-3 poule D', ordre: 13 },
+  { _id: 'eq-u11f1', nom: 'U11F 1', categorie: 'cat-u11', championnat: 'DFU11-2 poule D', ordre: 14 },
+  { _id: 'eq-u11f2', nom: 'U11F 2', categorie: 'cat-u11', championnat: 'DFU11-3 poule E', ordre: 15 },
+  { _id: 'eq-u9f', nom: 'U9F', categorie: 'cat-u9', championnat: 'DFU9-2 poule D', ordre: 16 },
 ].map((e) => ({
   ...e,
   _type: 'equipe',
-  slug: { _type: 'slug', current: e.nom.toLowerCase() },
+  slug: { _type: 'slug', current: e.nom.toLowerCase().replace(/\s+/g, '-') },
   categorie: { _type: 'reference', _ref: e.categorie },
 }));
 
+/**
+ * Les compétitions pour lesquelles un calendrier a été fourni. Les autres
+ * s'ajoutent dans le Studio au fur et à mesure que le club transmet les
+ * feuilles FFBB.
+ */
 export const competitions = [
   { _id: 'comp-prm', libelle: 'PRM poule A2', equipe: 'eq-sm1', ordre: 1 },
   { _id: 'comp-dm3', libelle: 'DM3 poule B', equipe: 'eq-sm2', ordre: 2 },
@@ -75,50 +98,23 @@ export const competitions = [
 }));
 
 /**
- * Classement d'exemple. La maquette elle-même l'annonce comme tel
- * (« classement d'exemple — remplacé par le flux FFBB au build »).
- * À remplacer par le relevé réel avant mise en ligne.
+ * Aucun classement au démarrage : la saison commence, aucune rencontre n'a été
+ * jouée. Un tableau de classement rempli de zéros — ou pire, de valeurs
+ * inventées — ferait passer pour réel ce qui ne l'est pas. Le site masque
+ * simplement le bloc tant qu'aucun relevé n'est saisi dans le Studio.
  */
-export const classements = [
-  {
-    _id: 'clt-prm',
-    _type: 'classement',
-    competition: { _type: 'reference', _ref: 'comp-prm' },
-    misAJourLe: '2026-09-15',
-    source: 'manuelle',
-    lignes: [
-      { _key: 'l1', _type: 'ligneClassement', rang: 1, equipe: 'Beaumarchais Lyon Métropole', points: 6, joues: 3, difference: 41 },
-      { _key: 'l2', _type: 'ligneClassement', rang: 2, equipe: 'ESGA Genas Azieu 1', estESGA: true, points: 5, joues: 3, difference: 18 },
-      { _key: 'l3', _type: 'ligneClassement', rang: 3, equipe: 'CO St Fons Basket', points: 5, joues: 3, difference: 7 },
-      { _key: 'l4', _type: 'ligneClassement', rang: 4, equipe: 'AS Andéolaise', points: 4, joues: 3, difference: -5 },
-      { _key: 'l5', _type: 'ligneClassement', rang: 5, equipe: 'BC Communay Ternay', points: 4, joues: 3, difference: -12 },
-      { _key: 'l6', _type: 'ligneClassement', rang: 6, equipe: 'Irigny Vernaison', points: 3, joues: 3, difference: -21 },
-      { _key: 'l7', _type: 'ligneClassement', rang: 7, equipe: 'ASC Mionnay', points: 3, joues: 3, difference: -28 },
-    ],
-  },
-];
+export const classements = [];
 
-/** Les rencontres que la maquette affiche dans l'agenda et les résultats. */
+/**
+ * Les trois calendriers séniors réels de la saison 2026/2027.
+ * Les équipes de jeunes n'ont pas encore de calendrier fourni : elles se
+ * saisissent dans le Studio, rien n'est inventé ici.
+ */
 export const matchs = [
-  // Le week-end à venir — agenda du samedi 26 et dimanche 27 septembre.
-  { _id: 'm-u13f-irigny', equipe: 'eq-u13f', adversaire: 'Irigny Vernaison', debut: '2026-09-26T13:00:00+02:00', domicile: true, lieu: 'Gonzales', nature: 'plateau', statut: 'a-venir' },
-  { _id: 'm-u15m-mionnay', equipe: 'eq-u15m', adversaire: 'ASC Mionnay', debut: '2026-09-26T15:00:00+02:00', domicile: false, lieu: 'Mionnay', statut: 'a-venir' },
-  { _id: 'm-sm2-andeolaise', equipe: 'eq-sm2', adversaire: 'AS Andéolaise 2', debut: '2026-09-26T18:30:00+02:00', domicile: true, lieu: 'Gonzales', competition: 'comp-dm3', statut: 'a-venir' },
-  { _id: 'm-sm1-beaumarchais', equipe: 'eq-sm1', adversaire: 'Beaumarchais Lyon Métropole', debut: '2026-09-26T20:30:00+02:00', domicile: true, lieu: 'Gonzales', competition: 'comp-prm', statut: 'a-venir', afficheDeLaSemaine: true },
-  { _id: 'm-u11f-plateau', equipe: 'eq-u11f', adversaire: 'Plateau à Genas', debut: '2026-09-27T10:00:00+02:00', domicile: true, lieu: 'Gonzales', nature: 'plateau', statut: 'a-venir', note: '3 clubs invités' },
-  { _id: 'm-sf1-communay', equipe: 'eq-sf1', adversaire: 'BC Communay Ternay', debut: '2026-09-27T15:30:00+02:00', domicile: false, lieu: 'Communay', competition: 'comp-df2', statut: 'a-venir' },
-
-  // Derniers résultats.
-  { _id: 'm-sm1-stfons', equipe: 'eq-sm1', adversaire: 'CO St Fons Basket', debut: '2026-09-13T20:30:00+02:00', domicile: true, lieu: 'Gonzales', competition: 'comp-prm', statut: 'termine', scoreEsga: 78, scoreAdverse: 64 },
-  { _id: 'm-sf1-bouchoux', equipe: 'eq-sf1', adversaire: 'Bouchoux', debut: '2026-09-13T15:30:00+02:00', domicile: false, lieu: 'Bouchoux', competition: 'comp-df2', statut: 'termine', scoreEsga: 52, scoreAdverse: 49 },
-  { _id: 'm-u15m-mionnay-retour', equipe: 'eq-u15m', adversaire: 'ASC Mionnay', debut: '2026-09-12T15:00:00+02:00', domicile: true, lieu: 'Gonzales', statut: 'termine', scoreEsga: 61, scoreAdverse: 58 },
-].map((m) => ({
-  ...m,
-  _type: 'match',
-  equipe: { _type: 'reference', _ref: m.equipe },
-  ...(m.competition ? { competition: { _type: 'reference', _ref: m.competition } } : {}),
-  dansLeBandeau: true,
-}));
+  ...versMatchs(SM1, { equipe: 'eq-sm1', competition: 'comp-prm', prefixe: 'sm1' }),
+  ...versMatchs(SM2, { equipe: 'eq-sm2', competition: 'comp-dm3', prefixe: 'sm2' }),
+  ...versMatchs(SF1, { equipe: 'eq-sf1', competition: 'comp-df2', prefixe: 'sf1' }),
+];
 
 export const actualites = [
   {
@@ -191,6 +187,7 @@ export const pages = [
     _type: 'pageAccueil',
     surtitre: 'Inscriptions ouvertes · dès 6 ans',
     titre: 'On joue tous pour le même maillot',
+    motAccentue: 'maillot',
     intro:
       "15 équipes, de l'école de basket aux seniors pré-régionaux. Un club formateur au cœur de l'Est lyonnais : tu viens tester un entraînement, on s'occupe du reste.",
     ctaPrincipal: { libelle: 'Rejoindre le club', url: '/inscriptions' },
@@ -201,7 +198,6 @@ export const pages = [
       { _key: 'c3', valeur: '5·6·7 juin', libelle: 'Tournoi annuel ESGA' },
     ],
     badgeProchainMatch: '1er entraînement offert',
-    classementMisEnAvant: { _type: 'reference', _ref: 'comp-prm' },
     blocBenevole: {
       surtitre: 'On a besoin de toi',
       titre: 'Bénévole ou arbitre',

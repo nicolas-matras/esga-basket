@@ -26,6 +26,14 @@ export const match = defineType({
       validation: (r) => r.required(),
     }),
     defineField({
+      name: 'journee',
+      title: 'Journée',
+      type: 'number',
+      group: 'quand',
+      description: 'Le numéro de journée du championnat, tel qu’il figure sur la feuille FFBB.',
+      validation: (r) => r.integer().positive(),
+    }),
+    defineField({
       name: 'adversaire',
       title: 'Adversaire',
       type: 'string',
@@ -62,7 +70,7 @@ export const match = defineType({
       type: 'string',
       group: 'quand',
       initialValue: 'Gonzales',
-      description: 'Le gymnase. « Gonzales » à domicile, le nom de la ville en déplacement.',
+      description: 'Le gymnase. « Gonzales » à domicile, le nom de la salle ou « Extérieur » en déplacement.',
     }),
     defineField({
       name: 'competition',
@@ -97,21 +105,27 @@ export const match = defineType({
       options: {
         list: [
           { title: 'À venir', value: 'a-venir' },
-          { title: 'En cours', value: 'en-cours' },
           { title: 'Terminé', value: 'termine' },
           { title: 'Reporté', value: 'reporte' },
         ],
         layout: 'radio',
       },
       initialValue: 'a-venir',
+      description:
+        'Passez sur « Terminé » après la rencontre, puis saisissez le score. Les scores ne remontent pas automatiquement : la FFBB ne les expose pas.',
       validation: (r) => r.required(),
     }),
+    /*
+      Les scores restent toujours visibles, même sur un match « à venir ».
+      Les saisir se fait forcément après coup, souvent plusieurs jours plus
+      tard : obliger à changer le statut d'abord pour faire apparaître les
+      champs ajoute une étape que personne ne devine.
+    */
     defineField({
       name: 'scoreEsga',
       title: 'Score ESGA',
       type: 'number',
       group: 'score',
-      hidden: ({ parent }) => parent?.statut === 'a-venir' || parent?.statut === 'reporte',
       validation: (r) => r.integer().min(0),
     }),
     defineField({
@@ -119,16 +133,17 @@ export const match = defineType({
       title: 'Score adverse',
       type: 'number',
       group: 'score',
-      hidden: ({ parent }) => parent?.statut === 'a-venir' || parent?.statut === 'reporte',
-      validation: (r) => r.integer().min(0),
-    }),
-    defineField({
-      name: 'periode',
-      title: 'Période',
-      type: 'string',
-      group: 'score',
-      description: 'Uniquement pour un match en cours : « Q3 », « MT »…',
-      hidden: ({ parent }) => parent?.statut !== 'en-cours',
+      validation: (r) =>
+        r.integer().min(0).custom((valeur, contexte) => {
+          const d = contexte.document as { scoreEsga?: number; statut?: string } | undefined;
+          const unSeul =
+            (valeur === undefined) !== (d?.scoreEsga === undefined);
+          if (unSeul) return 'Renseignez les deux scores, ou aucun des deux.';
+          if (valeur !== undefined && d?.statut !== 'termine') {
+            return 'Un score est saisi : passez le statut sur « Terminé » pour qu’il s’affiche.';
+          }
+          return true;
+        }),
     }),
 
     defineField({
@@ -179,10 +194,19 @@ export const match = defineType({
             minute: '2-digit',
           })
         : 'date à définir';
-      const score = statut === 'termine' && se != null && sa != null ? ` · ${se}–${sa}` : '';
+      const joue = se != null && sa != null;
+      const passe = debut ? new Date(debut).getTime() < Date.now() : false;
+      // Le rappel le plus utile de la liste : ce match est passé, son score manque.
+      const etat = joue
+        ? ` · ${se}–${sa}`
+        : statut === 'reporte'
+          ? ' · reporté'
+          : passe
+            ? ' · ⚠ score à saisir'
+            : '';
       return {
         title: `${equipe ?? '?'} ${domicile ? 'reçoit' : 'se déplace à'} ${adversaire ?? '?'}`,
-        subtitle: `${date}${score}`,
+        subtitle: `${date}${etat}`,
       };
     },
   },

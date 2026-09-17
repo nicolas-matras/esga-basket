@@ -3,13 +3,13 @@ import type { SourceImage } from './sanity';
 
 export type Match = {
   _id: string;
+  journee?: number;
   adversaire?: string;
   debut?: string;
   domicile?: boolean;
   lieu?: string;
   nature?: string;
   statut?: string;
-  periode?: string;
   scoreEsga?: number | null;
   scoreAdverse?: number | null;
   afficheDeLaSemaine?: boolean;

@@ -62,6 +62,30 @@ async function muter(mutations) {
   return corps;
 }
 
+/** Interroge le dataset. */
+async function interroger(requete) {
+  const r = await fetch(`${base}/data/query/${dataset}?query=${encodeURIComponent(requete)}`, {
+    headers: entetes,
+  });
+  const corps = await r.json();
+  if (!r.ok) throw new Error(`Requête refusée (${r.status})`);
+  return corps.result;
+}
+
+/**
+ * Supprime les documents d'un type qui ne figurent plus dans le contenu injecté.
+ * Sans ça, une rencontre retirée du calendrier resterait affichée sur le site.
+ */
+async function nettoyer(type, idsGardes) {
+  const existants = await interroger(`*[_type == "${type}"]._id`);
+  const aSupprimer = existants.filter(
+    (id) => !idsGardes.includes(id) && !idsGardes.includes(id.replace(/^drafts\./, '')),
+  );
+  if (aSupprimer.length === 0) return 0;
+  await muter(aSupprimer.map((id) => ({ delete: { id } })));
+  return aSupprimer.length;
+}
+
 /** Téléverse un fichier image et renvoie son identifiant d'asset. */
 async function televerserImage(chemin, nomFichier) {
   const donnees = readFileSync(chemin);
@@ -111,9 +135,28 @@ async function principal() {
 
   let total = 0;
   for (const [titre, documents] of lots) {
-    await muter(documents.map((doc) => ({ createOrReplace: doc })));
+    if (documents.length > 0) {
+      await muter(documents.map((doc) => ({ createOrReplace: doc })));
+    }
     total += documents.length;
     console.log(`  ${titre.padEnd(20)} ${String(documents.length).padStart(2)} document(s)`);
+  }
+
+  // 3. On retire ce qui n'est plus dans le contenu de référence.
+  console.log('');
+  const aNettoyer = [
+    ['match', contenu.matchs],
+    ['classement', contenu.classements],
+    ['equipe', contenu.equipes],
+    ['competition', contenu.competitions],
+    ['categorie', contenu.categories],
+  ];
+  for (const [type, documents] of aNettoyer) {
+    const n = await nettoyer(
+      type,
+      documents.map((d) => d._id),
+    );
+    if (n > 0) console.log(`  ${type.padEnd(20)} ${String(n).padStart(2)} document(s) obsolète(s) supprimé(s)`);
   }
 
   console.log(`\n${total} documents écrits.`);

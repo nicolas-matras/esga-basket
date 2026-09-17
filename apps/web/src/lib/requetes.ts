@@ -21,7 +21,7 @@ const ENTETE = groq`surtitre, titre, intro, seo{ titre, description, image ${IMA
 export const REQ_PAGE = (type: string) => groq`*[_type == "${type}"][0]`;
 
 export const REQ_ACCUEIL = groq`*[_type == "pageAccueil"][0]{
-  surtitre, titre, intro,
+  surtitre, titre, motAccentue, intro,
   ctaPrincipal, ctaVideo,
   photo ${IMAGE},
   chiffres[]{ _key, valeur, libelle },
@@ -75,21 +75,41 @@ export const REQ_EQUIPES = groq`*[_type == "equipe"] | order(ordre asc){
 
 /** Un match, tel qu'affiché partout : agenda, résultats, bandeau. */
 const MATCH = groq`{
-  _id, adversaire, debut, domicile, lieu, nature, statut, periode,
+  _id, journee, adversaire, debut, domicile, lieu, nature, statut,
   scoreEsga, scoreAdverse, afficheDeLaSemaine, dansLeBandeau, note,
   logoAdversaire ${IMAGE},
   equipe->{ _id, nom, championnat },
   competition->{ libelle }
 }`;
 
-export const REQ_MATCHS_A_VENIR = groq`*[_type == "match" && statut in ["a-venir", "en-cours"]]
+/*
+  Ce qui décide de l'affichage, c'est la DATE et la présence d'un score — pas
+  un statut qu'il faudrait penser à basculer. Un bénévole qui saisit le score
+  d'un match voit le site se mettre à jour sans autre manipulation, et un match
+  dont la date est passée quitte de lui-même la liste des rencontres à venir,
+  même si personne n'a touché à son statut.
+*/
+export const REQ_MATCHS_A_VENIR = groq`*[_type == "match"
+  && statut != "reporte"
+  && !defined(scoreEsga)
+  && dateTime(debut) > dateTime(now())]
   | order(debut asc) ${MATCH}`;
 
-export const REQ_MATCHS_JOUES = groq`*[_type == "match" && statut == "termine"]
+/** Un match est « joué » dès que les deux scores sont saisis. */
+export const REQ_MATCHS_JOUES = groq`*[_type == "match"
+  && defined(scoreEsga) && defined(scoreAdverse)]
   | order(debut desc) ${MATCH}`;
 
-export const REQ_MATCHS_BANDEAU = groq`*[_type == "match" && dansLeBandeau == true]
-  | order(debut desc)[0...8] ${MATCH}`;
+/*
+  Le bandeau n'annonce que les rencontres À VENIR, jamais de score.
+  La FFBB ne fournit pas les résultats : les scores sont saisis à la main, donc
+  parfois en retard. Un bandeau qui affiche « LIVE 47—41 » sur une donnée
+  vieille de trois jours est pire que pas de bandeau du tout.
+*/
+export const REQ_MATCHS_BANDEAU = groq`*[_type == "match" && dansLeBandeau == true
+  && statut != "reporte" && !defined(scoreEsga)
+  && dateTime(debut) > dateTime(now())]
+  | order(debut asc)[0...8] ${MATCH}`;
 
 export const REQ_CLASSEMENTS = groq`*[_type == "classement"] | order(misAJourLe desc){
   _id, misAJourLe, source,

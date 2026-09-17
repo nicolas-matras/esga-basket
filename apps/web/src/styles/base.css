@@ -143,10 +143,29 @@ img {
   color: #fff;
 }
 
+/*
+  La maquette emploie DEUX boutons pleins, pas un : l'orange pour l'appel à
+  l'inscription (6 emplois, avec son halo), le navy pour les actions de page
+  (5 emplois, dont « Rejoindre le club » dans le héros).
+*/
+.bouton--navy {
+  background: var(--c-fond-inverse);
+  color: var(--c-texte-sur-inverse);
+}
+
+.bouton--navy:hover {
+  color: var(--c-texte-sur-inverse);
+}
+
+.bouton--large {
+  padding: 16px 26px;
+  font-size: var(--t-sm);
+}
+
 .bouton--secondaire {
   background: transparent;
   color: var(--c-titre);
-  border-color: var(--c-bordure-forte);
+  border: 1.5px solid var(--c-bordure-forte);
 }
 
 .bouton--secondaire:hover {

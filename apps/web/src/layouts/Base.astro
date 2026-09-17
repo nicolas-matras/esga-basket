@@ -43,10 +43,8 @@ type MatchBandeau = {
   _id: string;
   adversaire?: string;
   debut?: string;
-  statut?: string;
-  periode?: string;
-  scoreEsga?: number | null;
-  scoreAdverse?: number | null;
+  domicile?: boolean;
+  lieu?: string;
   equipe?: { nom?: string };
 };
 
@@ -66,20 +64,17 @@ const navigation = [
   { libelle: 'Contact', url: '/contact', cle: 'contact' },
 ];
 
-/** Le bandeau se remplit tout seul depuis les matchs, plus les messages fixes. */
+/**
+ * Le bandeau annonce les rencontres à venir : équipe, adversaire, jour, heure.
+ * Jamais de score — ils sont saisis à la main et seraient souvent périmés.
+ */
 function libelleBandeau(m: MatchBandeau): string | null {
+  if (!m.debut) return null;
   const equipe = m.equipe?.nom ?? '';
-  if (m.statut === 'en-cours' && m.scoreEsga != null && m.scoreAdverse != null) {
-    return `LIVE ${equipe} ${m.scoreEsga}—${m.scoreAdverse}${m.periode ? ' ' + m.periode : ''}`;
-  }
-  if (m.statut === 'termine' && m.scoreEsga != null && m.scoreAdverse != null) {
-    const issue = m.scoreEsga > m.scoreAdverse ? 'V' : m.scoreEsga < m.scoreAdverse ? 'D' : 'N';
-    return `${equipe} ${issue} ${m.scoreEsga}—${m.scoreAdverse} ${m.adversaire ?? ''}`.trim();
-  }
-  if (m.statut === 'a-venir' && m.debut) {
-    return `${equipe} ${dateCourte(m.debut)} ${heure(m.debut)}`.trim();
-  }
-  return null;
+  const ou = m.domicile === false ? 'à' : 'reçoit';
+  return `${equipe} ${ou} ${m.adversaire ?? ''} · ${dateCourte(m.debut)} ${heure(m.debut)}`
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 const messagesBandeau = [
