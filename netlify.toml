@@ -2,15 +2,17 @@
 # le Studio Sanity s'héberge chez Sanity (`pnpm --filter @esga/studio deploy`).
 
 [build]
-  # Le monorepo est à la racine ; on construit uniquement l'app web.
-  command = "pnpm install --frozen-lockfile && pnpm --filter @esga/web build"
+  # Netlify installe déjà les dépendances dans sa propre étape : on ne
+  # réinstalle pas ici, on construit seulement l'app web du monorepo.
+  command = "pnpm --filter @esga/web build"
   publish = "apps/web/dist"
 
 [build.environment]
-  NODE_VERSION = "22.12.0"
-  PNPM_VERSION = "12.4.2"
-  # Astro lit PUBLIC_SITE_URL pour le canonical, le sitemap et le robots.txt.
-  # Les variables Sanity se saisissent dans l'interface Netlify, pas ici.
+  # Version alignée sur les `engines` réels des dépendances : plusieurs
+  # paquets (eslint 10, astro-eslint-parser) refusent Node 22.12.
+  NODE_VERSION = "24.16.0"
+  # Pas de PNPM_VERSION : le champ `packageManager` du package.json fait foi.
+  # Deux sources de vérité finissent toujours par diverger.
 
 # Les polices sont versionnées par leur contenu et ne changent jamais.
 [[headers]]
