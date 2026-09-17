@@ -1,0 +1,108 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_BOUTIQUE_PAGE, REQ_PARAMETRES, REQ_PRODUITS } from '../lib/requetes';
+import { interroger, urlImage, type SourceImage } from '../lib/sanity';
+import { euros, joursAvant } from '../lib/format';
+import type { EntetePage as Entete } from '../lib/types';
+
+type Commande = { surtitre?: string; cloture?: string; texte?: string; libelleBouton?: string };
+type Produit = {
+  _id: string; nom?: string; detail?: string; prix?: number | null;
+  tailles?: string[]; disponible?: boolean; photo?: SourceImage;
+};
+
+const page = await interroger<Entete & { commandeGroupee?: Commande; mentionAttente?: string }>(
+  REQ_BOUTIQUE_PAGE,
+);
+const produits = await interroger<Produit[]>(REQ_PRODUITS);
+const parametres = await interroger<{ email?: string }>(REQ_PARAMETRES);
+
+const restant = joursAvant(page?.commandeGroupee?.cloture);
+const clotureFr = page?.commandeGroupee?.cloture?.split('-').reverse().join('/');
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Boutique'} description={page?.seo?.description ?? page?.intro} page="boutique">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Boutique'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu">
+      {produits.length === 0 ? (
+        <p class="mention">Collection non renseignée. Les articles se saisissent dans le Studio.</p>
+      ) : (
+        <div class="grille grille--auto">
+          {produits.map((p) => {
+            const photo = urlImage(p.photo, 800, 800);
+            return (
+              <article class:list={['carte produit', p.disponible === false && 'produit--indispo']}>
+                <div class="produit__media">
+                  {photo ? (
+                    <img src={photo} alt={p.photo?.alt ?? p.nom ?? ''} loading="lazy" />
+                  ) : (
+                    <span class="mention">photo produit 800×800</span>
+                  )}
+                </div>
+                <div class="produit__corps">
+                  <h2 class="titre-3">{p.nom}</h2>
+                  {p.detail && <p class="produit__detail">{p.detail}</p>}
+                  {p.tailles && p.tailles.length > 0 && (
+                    <p class="mention">{p.tailles.join(' · ')}</p>
+                  )}
+                  <p class:list={['produit__prix chiffres', p.prix == null && 'produit__prix--vide']}>
+                    {euros(p.prix)}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </section>
+
+  {page?.commandeGroupee?.cloture && (
+    <section class="section">
+      <div class="contenu carte bloc-commande">
+        <div>
+          <p class="surtitre">{page.commandeGroupee.surtitre}</p>
+          <h2 class="titre-2">
+            Clôture le {clotureFr}
+            {restant !== null && restant >= 0 && <span class="bloc-commande__reste"> · J-{restant}</span>}
+          </h2>
+          <p class="chapo">{page.commandeGroupee.texte}</p>
+        </div>
+        <a
+          href={`mailto:${parametres?.email ?? ''}?subject=${encodeURIComponent('Commande groupée textile')}`}
+          class="bouton bouton--principal"
+        >
+          Passer commande par email →
+        </a>
+      </div>
+      <div class="contenu">
+        <p class="mention" style="margin-top:var(--e-6)">
+          pas de paiement en ligne : le club commande, tu récupères au gymnase
+        </p>
+        {page.mentionAttente && <p class="mention">{page.mentionAttente}</p>}
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .produit { overflow: hidden; }
+  .produit--indispo { opacity: 0.55; }
+  .produit__media {
+    aspect-ratio: 1; background: var(--c-fond-doux); display: grid; place-items: center;
+    border-bottom: 1px solid var(--c-bordure-douce);
+  }
+  .produit__media img { width: 100%; height: 100%; object-fit: cover; }
+  .produit__corps { padding: var(--e-7); display: grid; gap: var(--e-3); }
+  .produit__detail { margin: 0; font: 400 var(--t-xs) / 1.6 var(--f-texte); color: var(--c-texte-2); }
+  .produit__prix { margin: 0; font: 400 var(--t-n6) / 1 var(--f-titre); color: var(--c-accent); }
+  .produit__prix--vide { font: 400 var(--t-mono-corps) var(--f-mono); color: var(--c-texte-3); text-transform: uppercase; }
+  .bloc-commande {
+    padding: var(--e-11); display: flex; align-items: center; justify-content: space-between;
+    gap: var(--e-8); flex-wrap: wrap;
+  }
+  .bloc-commande__reste { color: var(--c-accent); }
+</style>

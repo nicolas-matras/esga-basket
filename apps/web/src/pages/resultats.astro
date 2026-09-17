@@ -1,0 +1,64 @@
+---
+import CarteMatch from '../components/CarteMatch.astro';
+import EntetePage from '../components/EntetePage.astro';
+import TableauClassement from '../components/TableauClassement.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_CLASSEMENTS, REQ_MATCHS_JOUES, REQ_RESULTATS_PAGE } from '../lib/requetes';
+import { interroger } from '../lib/sanity';
+import type { Classement, EntetePage as Entete, Match } from '../lib/types';
+
+const page = await interroger<Entete & { titreDerniersResultats?: string; nombreResultats?: number }>(
+  REQ_RESULTATS_PAGE,
+);
+const classements = await interroger<Classement[]>(REQ_CLASSEMENTS);
+const joues = await interroger<Match[]>(REQ_MATCHS_JOUES);
+
+// Un seul relevé par compétition : le plus récent.
+const parCompetition = new Map<string, Classement>();
+for (const c of classements) {
+  const cle = c.competition?._id ?? c._id ?? '';
+  if (!parCompetition.has(cle)) parCompetition.set(cle, c);
+}
+const derniers = [...parCompetition.values()];
+const aAfficher = joues.slice(0, page?.nombreResultats ?? 6);
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Résultats'} description={page?.seo?.description ?? page?.intro} page="resultats">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Résultats'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu">
+      {derniers.length === 0 ? (
+        <p class="mention">Aucun classement saisi pour le moment.</p>
+      ) : (
+        <div class="grille grille--large">
+          {derniers.map((c) => (
+            <div class="carte bloc-classement">
+              <TableauClassement
+                titre={c.competition?.libelle}
+                lignes={c.lignes ?? []}
+                misAJourLe={c.misAJourLe}
+                source={c.source}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  {aAfficher.length > 0 && (
+    <section class="section section--douce">
+      <div class="contenu">
+        <h2 class="titre-2">{page?.titreDerniersResultats ?? 'Derniers résultats'}</h2>
+        <div class="grille grille--auto" style="margin-top:var(--e-9)">
+          {aAfficher.map((m) => <CarteMatch match={m} />)}
+        </div>
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .bloc-classement { padding: var(--e-8); }
+</style>

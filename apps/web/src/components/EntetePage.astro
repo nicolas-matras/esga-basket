@@ -1,0 +1,26 @@
+---
+/** L'en-tête de page de la maquette : surtitre mono, grand titre Anton, chapô. */
+export interface Props {
+  surtitre?: string;
+  titre: string;
+  intro?: string;
+}
+const { surtitre, titre, intro } = Astro.props;
+---
+
+<section class="section entete-page">
+  <div class="contenu">
+    {surtitre && <p class="surtitre">{surtitre}</p>}
+    <h1 class="titre-1">{titre}</h1>
+    {intro && <p class="chapo">{intro}</p>}
+  </div>
+</section>
+
+<style>
+  .entete-page {
+    padding-block: var(--e-section-large) var(--e-section);
+  }
+  .entete-page .titre-1 {
+    margin-top: var(--e-5);
+  }
+</style>

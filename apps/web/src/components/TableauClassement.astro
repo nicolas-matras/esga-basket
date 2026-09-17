@@ -1,0 +1,115 @@
+---
+import type { LigneClassement } from '../lib/types';
+/**
+ * Un classement. Sous 560 px, les colonnes secondaires (joués, différence)
+ * disparaissent : à cette largeur, la maquette serait illisible avec ses
+ * colonnes fixes de 40/56/60 px.
+ */
+export interface Props {
+  titre?: string;
+  misAJourLe?: string;
+  source?: string;
+  lignes: LigneClassement[];
+  /** Version courte pour l'accueil. */
+  compact?: boolean;
+}
+const { titre, misAJourLe, source, lignes = [], compact = false } = Astro.props;
+const visibles = compact ? lignes.slice(0, 4) : lignes;
+const dateFr = misAJourLe ? misAJourLe.split('-').reverse().join('/') : null;
+---
+
+{
+  visibles.length === 0 ? (
+    <p class="mention">Classement non renseigné.</p>
+  ) : (
+    <div class="classement">
+      {titre && <p class="surtitre">{titre}</p>}
+      <table class="chiffres">
+        <thead>
+          <tr>
+            <th scope="col" class="col-rang">#</th>
+            <th scope="col">Équipe</th>
+            <th scope="col" class="col-num">Pts</th>
+            {!compact && <th scope="col" class="col-num col-secondaire">Jo</th>}
+            <th scope="col" class="col-num col-secondaire">Diff</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibles.map((l) => (
+            <tr class:list={[l.estESGA && 'ligne--esga']}>
+              <td class="col-rang">{l.rang ?? '—'}</td>
+              <td class="col-equipe">{l.equipe ?? '—'}</td>
+              <td class="col-num">{l.points ?? '—'}</td>
+              {!compact && <td class="col-num col-secondaire">{l.joues ?? '—'}</td>}
+              <td class="col-num col-secondaire">
+                {typeof l.difference === 'number'
+                  ? (l.difference > 0 ? '+' : '') + l.difference
+                  : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {dateFr && (
+        <p class="mention classement__source">
+          {source === 'ffbb' ? 'Source FFBB' : 'Saisie manuelle'} · relevé du {dateFr}
+        </p>
+      )}
+    </div>
+  )
+}
+
+<style>
+  .classement {
+    display: grid;
+    gap: var(--e-5);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-texte-3);
+    text-align: left;
+    padding-bottom: var(--e-3);
+    border-bottom: 1px solid var(--c-bordure);
+  }
+  td {
+    padding: var(--e-4) 0;
+    border-bottom: 1px solid var(--c-bordure-douce);
+    font: 500 var(--t-xs) / 1.4 var(--f-texte);
+    color: var(--c-texte);
+  }
+  .col-rang {
+    width: 34px;
+  }
+  .col-num {
+    width: 54px;
+    text-align: right;
+    font-family: var(--f-mono);
+    font-weight: 700;
+  }
+  th.col-num {
+    text-align: right;
+  }
+  .ligne--esga td {
+    color: var(--c-titre);
+    font-weight: 700;
+  }
+  .ligne--esga .col-equipe {
+    box-shadow: inset 3px 0 0 var(--c-accent);
+    padding-left: var(--e-3);
+  }
+  .classement__source {
+    margin: 0;
+  }
+  @media (max-width: 560px) {
+    .col-secondaire {
+      display: none;
+    }
+  }
+</style>

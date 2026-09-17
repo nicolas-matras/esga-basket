@@ -1,0 +1,74 @@
+---
+import { dateEtiquette } from '../lib/format';
+import { urlImage } from '../lib/sanity';
+import type { Actualite } from '../lib/types';
+
+export interface Props {
+  actualite: Actualite;
+  /** Format à la une : image plus grande, extrait affiché. */
+  grande?: boolean;
+}
+const { actualite, grande = false } = Astro.props;
+const image = urlImage(actualite.image, grande ? 1200 : 600, grande ? 800 : 360);
+const lien = actualite.slug ? `/actualites/${actualite.slug}` : '#';
+---
+
+<a href={lien} class:list={['actu', grande && 'actu--grande']}>
+  <div class="actu__media">
+    {image ? (
+      <img src={image} alt={actualite.image?.alt ?? ''} loading="lazy" />
+    ) : (
+      <span class="actu__attente mention" aria-hidden="true">
+        photo {grande ? '1200×800' : '600×360'} à fournir
+      </span>
+    )}
+  </div>
+  <div class="actu__corps">
+    <p class="surtitre">
+      {dateEtiquette(actualite.date)}{actualite.rubrique ? ` · ${actualite.rubrique}` : ''}
+    </p>
+    <h3 class:list={[grande ? 'titre-2' : 'titre-3']}>{actualite.titre}</h3>
+    {grande && actualite.extrait && <p class="chapo">{actualite.extrait}</p>}
+  </div>
+</a>
+
+<style>
+  .actu {
+    display: block;
+    background: var(--c-surface);
+    border: 1px solid var(--c-bordure);
+    border-radius: var(--r-xl);
+    box-shadow: var(--o-carte);
+    overflow: hidden;
+    text-decoration: none;
+    transition: var(--transition-carte);
+  }
+  .actu:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--o-carte-survol);
+  }
+  .actu__media {
+    aspect-ratio: 5 / 3;
+    background: var(--c-fond-doux);
+    display: grid;
+    place-items: center;
+    border-bottom: 1px solid var(--c-bordure-douce);
+  }
+  .actu--grande .actu__media {
+    aspect-ratio: 3 / 2;
+  }
+  .actu__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .actu__attente {
+    text-align: center;
+    padding: var(--e-6);
+  }
+  .actu__corps {
+    padding: var(--e-7);
+    display: grid;
+    gap: var(--e-3);
+  }
+</style>

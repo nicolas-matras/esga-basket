@@ -1,0 +1,428 @@
+---
+import CarteActu from '../components/CarteActu.astro';
+import CarteMatch from '../components/CarteMatch.astro';
+import TableauClassement from '../components/TableauClassement.astro';
+import Base from '../layouts/Base.astro';
+import {
+  REQ_ACCUEIL,
+  REQ_ACTUALITES,
+  REQ_MATCHS_A_VENIR,
+  REQ_REGROUPEMENTS,
+} from '../lib/requetes';
+import { interroger, urlImage, type SourceImage } from '../lib/sanity';
+import type { Actualite, Categorie, LigneClassement, Match } from '../lib/types';
+
+type Accueil = {
+  surtitre?: string;
+  titre?: string;
+  intro?: string;
+  ctaPrincipal?: { libelle?: string; url?: string };
+  ctaVideo?: { libelle?: string; url?: string };
+  photo?: SourceImage;
+  chiffres?: { _key: string; valeur?: string; libelle?: string }[];
+  badgeProchainMatch?: string;
+  classement?: {
+    libelle?: string;
+    releve?: { misAJourLe?: string; source?: string; lignes?: LigneClassement[] };
+  };
+  blocBenevole?: { surtitre?: string; titre?: string; texte?: string; libelleBouton?: string };
+  blocInscription?: {
+    titre?: string;
+    texte?: string;
+    libelleBouton?: string;
+    etapes?: { _key: string; titre?: string; texte?: string }[];
+  };
+  seo?: { titre?: string; description?: string };
+};
+
+const page = await interroger<Accueil>(REQ_ACCUEIL);
+const matchs = await interroger<Match[]>(REQ_MATCHS_A_VENIR);
+const regroupements = await interroger<Categorie[]>(REQ_REGROUPEMENTS);
+const actualites = await interroger<Actualite[]>(REQ_ACTUALITES);
+
+const prochain = matchs[0];
+const suivants = matchs.slice(1, 4);
+const photoHeros = urlImage(page?.photo, 900, 1200);
+const lignes = page?.classement?.releve?.lignes ?? [];
+---
+
+<Base
+  titre={page?.seo?.titre ?? 'Accueil'}
+  description={page?.seo?.description ?? page?.intro}
+  page="accueil"
+>
+  <!-- ---------- Héros ---------- -->
+  <section class="section heros">
+    <div class="contenu heros__grille">
+      <div>
+        {page?.surtitre && <p class="heros__pastille">{page.surtitre}</p>}
+        <h1 class="heros__titre">{page?.titre}</h1>
+        {page?.intro && <p class="chapo">{page.intro}</p>}
+
+        <div class="heros__actions">
+          {
+            page?.ctaPrincipal?.libelle && (
+              <a href={page.ctaPrincipal.url ?? '/inscriptions'} class="bouton bouton--principal">
+                {page.ctaPrincipal.libelle} →
+              </a>
+            )
+          }
+          {
+            page?.ctaVideo?.libelle && (
+              <a
+                href={page.ctaVideo.url ?? '#'}
+                class="bouton bouton--secondaire"
+                aria-disabled={page.ctaVideo.url ? undefined : 'true'}
+              >
+                ▶ {page.ctaVideo.libelle}
+              </a>
+            )
+          }
+        </div>
+
+        {
+          page?.chiffres && page.chiffres.length > 0 && (
+            <ul class="chiffres-cles">
+              {page.chiffres.map((c) => (
+                <li>
+                  <span class="chiffres-cles__valeur chiffres">{c.valeur}</span>
+                  <span class="chiffres-cles__libelle">{c.libelle}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      <div class="heros__media">
+        {
+          photoHeros ? (
+            <img src={photoHeros} alt={page?.photo?.alt ?? ''} width="900" height="1200" />
+          ) : (
+            <span class="heros__attente mention">
+              photo à fournir — équipe au Gonzales, portrait 900×1200
+            </span>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Prochain match ---------- -->
+  {
+    prochain && (
+      <section class="section">
+        <div class="contenu">
+          <div class="entete-section">
+            <h2 class="titre-2">Nuit de match</h2>
+            <a href="/agenda" class="lien-fleche">Agenda complet ↗</a>
+          </div>
+
+          <div class="grille-match">
+            <div>
+              <CarteMatch match={prochain} vedette />
+              {page?.badgeProchainMatch && (
+                <p class="badge-offert">{page.badgeProchainMatch}</p>
+              )}
+            </div>
+            <div class="grille-match__liste">
+              {suivants.map((m) => (
+                <CarteMatch match={m} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ---------- Classement ---------- -->
+  {
+    lignes.length > 0 && (
+      <section class="section section--douce">
+        <div class="contenu">
+          <div class="entete-section">
+            <h2 class="titre-2">Classement {page?.classement?.libelle}</h2>
+            <a href="/resultats" class="lien-fleche">Tous les classements ↗</a>
+          </div>
+          <TableauClassement
+            lignes={lignes}
+            misAJourLe={page?.classement?.releve?.misAJourLe}
+            source={page?.classement?.releve?.source}
+            compact
+          />
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ---------- Trouve ton équipe ---------- -->
+  {
+    regroupements.length > 0 && (
+      <section class="section">
+        <div class="contenu">
+          <div class="entete-section">
+            <h2 class="titre-2">Trouve ton équipe</h2>
+            <a href="/equipes" class="lien-fleche">Les équipes ↗</a>
+          </div>
+          <div class="grille grille--auto">
+            {regroupements.map((r) => (
+              <a href="/equipes" class="carte categorie">
+                <span class="categorie__libelle">{r.regroupement}</span>
+                <span class="titre-3">{r.accroche}</span>
+                <span class="categorie__detail">{r.detail}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ---------- Actualités ---------- -->
+  {
+    actualites.length > 0 && (
+      <section class="section">
+        <div class="contenu">
+          <div class="entete-section">
+            <h2 class="titre-2">La vie du club</h2>
+            <a href="/actualites" class="lien-fleche">Toutes les actus ↗</a>
+          </div>
+          <div class="grille grille--large">
+            {actualites.slice(0, 2).map((a) => (
+              <CarteActu actualite={a} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ---------- Bénévolat + inscription ---------- -->
+  <section class="section">
+    <div class="contenu grille grille--large">
+      {
+        page?.blocBenevole?.titre && (
+          <div class="carte bloc bloc--encre">
+            <p class="surtitre">{page.blocBenevole.surtitre}</p>
+            <h2 class="titre-2">{page.blocBenevole.titre}</h2>
+            <p class="chapo">{page.blocBenevole.texte}</p>
+            <a href="/contact" class="bouton bouton--principal">
+              {page.blocBenevole.libelleBouton} →
+            </a>
+          </div>
+        )
+      }
+      {
+        page?.blocInscription?.titre && (
+          <div class="carte bloc">
+            <h2 class="titre-2">{page.blocInscription.titre}</h2>
+            <p class="chapo">{page.blocInscription.texte}</p>
+            <ol class="etapes">
+              {(page.blocInscription.etapes ?? []).map((e, i) => (
+                <li>
+                  <span class="etapes__numero chiffres">{String(i + 1).padStart(2, '0')}</span>
+                  <span>
+                    <strong>{e.titre}</strong>
+                    <span class="etapes__texte">{e.texte}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <a href="/inscriptions" class="bouton bouton--principal">
+              {page.blocInscription.libelleBouton} →
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .heros {
+    padding-block: var(--e-section-large);
+  }
+  .heros__grille {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(24px, 4vw, 44px);
+    align-items: center;
+  }
+  .heros__pastille {
+    display: inline-block;
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-accent-texte);
+    background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+    padding: 7px 12px;
+    border-radius: var(--r-pilule);
+    margin: 0;
+  }
+  .heros__titre {
+    font: 400 var(--t-d1) / var(--t-d1-lh) var(--f-titre);
+    letter-spacing: var(--ls-titre);
+    text-transform: uppercase;
+    color: var(--c-titre);
+    margin: var(--e-8) 0 0;
+    text-wrap: balance;
+  }
+  .heros__actions {
+    display: flex;
+    gap: var(--e-4);
+    flex-wrap: wrap;
+    margin-top: var(--e-9);
+  }
+  .heros__media {
+    aspect-ratio: 3 / 4;
+    border-radius: var(--r-2xl);
+    background: var(--c-fond-doux);
+    border: 1px solid var(--c-bordure);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .heros__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .heros__attente {
+    text-align: center;
+    padding: var(--e-8);
+  }
+
+  .chiffres-cles {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--e-6);
+    margin: var(--e-11) 0 0;
+    padding: var(--e-8) 0 0;
+    border-top: 1px solid var(--c-bordure);
+  }
+  .chiffres-cles__valeur {
+    display: block;
+    font: 400 var(--t-n3) / 1 var(--f-titre);
+    color: var(--c-accent);
+    text-transform: uppercase;
+  }
+  .chiffres-cles__libelle {
+    display: block;
+    margin-top: 6px;
+    font: 700 var(--t-etiquette) / 1.4 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-texte-2);
+  }
+
+  .lien-fleche {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-accent-texte);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .lien-fleche:hover {
+    color: var(--c-titre);
+  }
+
+  .grille-match {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: var(--e-6);
+    align-items: start;
+  }
+  .grille-match__liste {
+    display: grid;
+    gap: var(--e-5);
+  }
+  .badge-offert {
+    margin: var(--e-5) 0 0;
+    text-align: center;
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-accent-texte);
+  }
+
+  .categorie {
+    display: grid;
+    gap: var(--e-3);
+    padding: var(--e-8);
+    text-decoration: none;
+  }
+  .categorie__libelle {
+    font: 400 var(--t-n3) / 1 var(--f-titre);
+    color: var(--c-accent);
+    text-transform: uppercase;
+  }
+  .categorie__detail {
+    font: 500 var(--t-xs) / 1.5 var(--f-texte);
+    color: var(--c-texte-2);
+  }
+
+  .bloc {
+    padding: var(--e-11);
+    display: grid;
+    gap: var(--e-6);
+    align-content: start;
+  }
+  .bloc .bouton {
+    justify-self: start;
+  }
+  .bloc--encre {
+    background: var(--c-fond-encre);
+    border-color: transparent;
+    color: #fff;
+  }
+  .bloc--encre .titre-2 {
+    color: #fff;
+  }
+  .bloc--encre .chapo {
+    color: var(--brut-gris-05);
+  }
+  .bloc--encre .surtitre {
+    color: var(--brut-orange);
+  }
+
+  .etapes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--e-5);
+  }
+  .etapes li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--e-5);
+    align-items: baseline;
+  }
+  .etapes__numero {
+    font: 400 var(--t-n6) / 1 var(--f-titre);
+    color: var(--c-accent);
+  }
+  .etapes li strong {
+    display: block;
+    font: 700 var(--t-sm) / 1.4 var(--f-texte);
+    color: var(--c-titre);
+  }
+  .etapes__texte {
+    font: 400 var(--t-xs) / 1.6 var(--f-texte);
+    color: var(--c-texte-2);
+  }
+
+  @media (max-width: 860px) {
+    .heros__grille,
+    .grille-match {
+      grid-template-columns: 1fr;
+    }
+    .heros__media {
+      aspect-ratio: 4 / 3;
+      order: -1;
+    }
+  }
+</style>

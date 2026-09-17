@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESGA Basket — jetons de design</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <style>
+      /* Feuille de validation uniquement : ne fait pas partie du système. */
+      .page {
+        max-width: var(--l-contenu);
+        margin: 0 auto;
+        padding: var(--e-section) var(--e-gouttiere) 80px;
+      }
+      .entete {
+        display: flex;
+        align-items: center;
+        gap: var(--e-6);
+        padding-bottom: var(--e-10);
+        border-bottom: 1px solid var(--c-bordure);
+        flex-wrap: wrap;
+      }
+      .entete img {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+      }
+      .etiquette {
+        font: 700 var(--t-etiquette) / var(--t-etiquette-lh) var(--f-mono);
+        letter-spacing: var(--ls-etiquette);
+        text-transform: uppercase;
+        color: var(--c-accent-texte);
+      }
+      h1 {
+        font: 400 var(--t-d3) / var(--t-d3-lh) var(--f-titre);
+        letter-spacing: var(--ls-titre);
+        text-transform: uppercase;
+        color: var(--c-titre);
+        margin: 4px 0 0;
+      }
+      h2 {
+        font: 400 var(--t-d4) / var(--t-d4-lh) var(--f-titre);
+        text-transform: uppercase;
+        color: var(--c-titre);
+        margin: 0;
+      }
+      section {
+        margin-top: 56px;
+      }
+      .titre-section {
+        display: flex;
+        align-items: baseline;
+        gap: var(--e-5);
+        margin-bottom: var(--e-9);
+        flex-wrap: wrap;
+      }
+      .note {
+        font: 400 var(--t-xs) / var(--t-xs-lh) var(--f-texte);
+        color: var(--c-texte-2);
+        max-width: 62ch;
+      }
+
+      .grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: var(--e-5);
+      }
+      .jeton {
+        border: 1px solid var(--c-bordure);
+        border-radius: var(--r-xl);
+        overflow: hidden;
+        background: var(--c-surface);
+        box-shadow: var(--o-carte);
+        transition: var(--transition-carte);
+      }
+      .jeton:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--o-carte-survol);
+      }
+      .pastille {
+        height: 76px;
+      }
+      .jeton-corps {
+        padding: var(--e-4) var(--e-5) var(--e-5);
+      }
+      .jeton-nom {
+        font: 500 var(--t-xxs) / 1.4 var(--f-texte);
+        color: var(--c-titre);
+      }
+      .jeton-val {
+        font: 400 var(--t-mono-corps) / var(--t-mono-corps-lh) var(--f-mono);
+        color: var(--c-texte-2);
+        text-transform: uppercase;
+      }
+      .ratio {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 2px 7px;
+        border-radius: var(--r-pilule);
+        font: 700 var(--t-etiquette-sm) / 1.4 var(--f-mono);
+        letter-spacing: var(--ls-etiquette);
+      }
+      .ok {
+        background: rgb(21 128 61 / 0.12);
+        color: var(--c-victoire);
+      }
+      .ko {
+        background: rgb(192 53 60 / 0.12);
+        color: var(--c-defaite);
+      }
+
+      .ligne-typo {
+        padding: var(--e-6) 0;
+        border-bottom: 1px solid var(--c-bordure-douce);
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: var(--e-6);
+        align-items: baseline;
+      }
+      .ligne-typo .meta {
+        font: 400 var(--t-mono-corps) / 1.5 var(--f-mono);
+        color: var(--c-texte-2);
+        text-transform: uppercase;
+      }
+      .demo-titre {
+        font-family: var(--f-titre);
+        font-weight: 400;
+        text-transform: uppercase;
+        color: var(--c-titre);
+      }
+      .demo-texte {
+        font-family: var(--f-texte);
+        color: var(--c-texte);
+      }
+
+      .bandes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--e-4);
+      }
+      .rayon-demo,
+      .ombre-demo {
+        display: grid;
+        place-items: center;
+        width: 110px;
+        height: 82px;
+        background: var(--c-surface);
+        border: 1px solid var(--c-bordure);
+        font: 400 var(--t-mono-corps) / 1 var(--f-mono);
+        color: var(--c-texte-2);
+      }
+      .ombre-demo {
+        border: none;
+      }
+
+      /* Le signal visuel candidat : le score comme un rail segmenté. */
+      .carte-match {
+        border: 1px solid var(--c-bordure);
+        border-radius: var(--r-xl);
+        background: var(--c-surface);
+        box-shadow: var(--o-carte);
+        padding: var(--e-8);
+        max-width: 420px;
+      }
+      .rail {
+        display: flex;
+        height: 10px;
+        border-radius: var(--r-pilule);
+        overflow: hidden;
+        background: var(--c-rail);
+        margin: var(--e-5) 0 var(--e-3);
+      }
+      .rail span {
+        display: block;
+      }
+      .score {
+        font: 700 var(--t-n2) / 1 var(--f-mono);
+        font-variant-numeric: tabular-nums;
+        color: var(--c-titre);
+      }
+      .sombre-bloc {
+        background: var(--brut-encre);
+        border-radius: var(--r-xl);
+        padding: var(--e-8);
+        color: #fff;
+      }
+
+      @media (max-width: 640px) {
+        .ligne-typo {
+          grid-template-columns: 1fr;
+          gap: var(--e-2);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="entete">
+        <img src="./logo-esga.png" alt="ESGA Genas Azieu" />
+        <div>
+          <div class="etiquette">Phase 1 bis · jetons déduits de la maquette</div>
+          <h1>Palette &amp; échelle typographique</h1>
+        </div>
+      </header>
+
+      <section>
+        <div class="titre-section">
+          <h2>Marque</h2>
+          <span class="note"
+            >Les deux seules couleurs de marque, relevées 133 et 106 fois dans la
+            maquette.</span
+          >
+        </div>
+        <div class="grille" id="marque"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Neutres froids</h2>
+          <span class="note"
+            >Tous dérivés du navy : la maquette n'emploie aucun gris neutre.</span
+          >
+        </div>
+        <div class="grille" id="neutres"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>États</h2>
+          <span class="note"
+            >La maquette ne contient qu'une couleur d'état (le vert de victoire,
+            un seul emploi). Le rouge de défaite et les variantes lisibles sur
+            fond clair sont des ajouts.</span
+          >
+        </div>
+        <div class="grille" id="etats"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Affichage — Anton</h2>
+          <span class="note"
+            >Toujours en capitales, interligne serré, tailles fluides.</span
+          >
+        </div>
+        <div id="typo-titre"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Texte — Archivo</h2>
+        </div>
+        <div id="typo-texte"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Étiquettes &amp; chiffres — JetBrains Mono</h2>
+          <span class="note"
+            >Le motif dominant de la maquette : 10,5 px, graisse 700, capitales,
+            interlettrage 0.12em.</span
+          >
+        </div>
+        <div id="typo-mono"></div>
+      </section>
+
+      <section>
+        <div class="titre-section"><h2>Rayons</h2></div>
+        <div class="bandes" id="rayons"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Ombres</h2>
+          <span class="note">Empilées, très douces. Survole pour voir la transition.</span>
+        </div>
+        <div class="bandes" id="ombres"></div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Piste : le score comme rail segmenté</h2>
+          <span class="note"
+            >Le rail représente le total des points marqués ; les deux segments
+            se partagent l'intérieur. Rien ne déborde, donc rien n'est rogné.</span
+          >
+        </div>
+        <div class="carte-match">
+          <div class="etiquette">SM1 · Pré-régionale · 26 sept</div>
+          <div
+            style="
+              display: flex;
+              align-items: baseline;
+              justify-content: space-between;
+              margin-top: 10px;
+            "
+          >
+            <span class="score">78</span>
+            <span
+              style="
+                font: 500 var(--t-xs) var(--f-texte);
+                color: var(--c-texte-2);
+              "
+              >ESGA 1 — CO St Fons</span
+            >
+            <span class="score" style="color: var(--c-texte-3)">64</span>
+          </div>
+          <div class="rail">
+            <span
+              style="width: 54.9%; background: var(--c-accent)"
+              title="ESGA 78"
+            ></span>
+            <span
+              style="width: 45.1%; background: var(--brut-gris-06)"
+              title="Adverse 64"
+            ></span>
+          </div>
+          <div
+            style="
+              font: 400 var(--t-mono-corps) var(--f-mono);
+              color: var(--c-texte-2);
+            "
+          >
+            +14 · 142 POINTS AU TOTAL
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="titre-section">
+          <h2>Bloc encre</h2>
+          <span class="note"
+            >Les sections sombres de la maquette, qui servent de base au thème
+            sombre.</span
+          >
+        </div>
+        <div class="sombre-bloc">
+          <div class="etiquette" style="color: var(--brut-orange)">
+            Prochain match · J-3
+          </div>
+          <div
+            style="
+              font: 400 var(--t-d4) / var(--t-d4-lh) var(--f-titre);
+              text-transform: uppercase;
+              margin-top: 8px;
+            "
+          >
+            ESGA 1 reçoit Beaumarchais
+          </div>
+          <div
+            style="
+              font: 400 var(--t-corps) / var(--t-corps-lh) var(--f-texte);
+              color: var(--brut-gris-05);
+              margin-top: 6px;
+            "
+          >
+            Sam. 26 sept · 20h30 · Complexe Marcel Gonzales — au cœur de l'Est
+            lyonnais.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const lin = (c) => (c /= 255, c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      const lum = (h) => {
+        h = h.replace('#', '');
+        if (h.length === 3) h = [...h].map((x) => x + x).join('');
+        const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      };
+      const ratio = (a, b) => {
+        const [x, y] = [lum(a), lum(b)];
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      };
+
+      const marque = [
+        ['Navy de marque', '#0C1B4A', 106],
+        ['Orange de marque', '#F26A24', 133],
+        ['Orange texte (ajout)', '#CA4D0C', 0],
+        ['Encre', '#06091A', 14],
+        ['Bleu lien', '#1E42A8', 3],
+      ];
+      const neutres = [
+        ['Blanc', '#FFFFFF', 72], ['Gris 01', '#F9FAFC', 2], ['Gris 02', '#F4F5F8', 14],
+        ['Gris 03', '#D9DDE8', 14], ['Gris 04', '#CFD4E2', 14], ['Gris 05', '#C6CEE6', 12],
+        ['Gris 06', '#B8C0D4', 3], ['Gris 07', '#A9B4D8', 4], ['Gris 08', '#8C97BC', 20],
+        ['Gris 09', '#7A86A1', 6], ['Gris 10', '#5A6484', 34], ['Gris 11', '#42506E', 27],
+        ['Navy 02', '#3A4A80', 1], ['Navy 03', '#1B2545', 3], ['Navy 04', '#141D38', 3],
+        ['Navy 05', '#0A1136', 2],
+      ];
+      const etats = [
+        ['Victoire', '#4ADE80', 1],
+        ['Victoire texte (ajout)', '#15803D', 0],
+        ['Défaite (ajout)', '#F2545B', 0],
+        ['Défaite texte (ajout)', '#C0353C', 0],
+      ];
+
+      const carte = ([nom, hex, n]) => {
+        const r = ratio(hex, '#FFFFFF');
+        const ok = r >= 4.5;
+        return `<div class="jeton">
+          <div class="pastille" style="background:${hex}"></div>
+          <div class="jeton-corps">
+            <div class="jeton-nom">${nom}</div>
+            <div class="jeton-val">${hex}${n ? ' · ' + n + '×' : ''}</div>
+            <span class="ratio ${ok ? 'ok' : 'ko'}">${r.toFixed(2)}:1 sur blanc</span>
+          </div>
+        </div>`;
+      };
+      marque.forEach((t) => (document.getElementById('marque').innerHTML += carte(t)));
+      neutres.forEach((t) => (document.getElementById('neutres').innerHTML += carte(t)));
+      etats.forEach((t) => (document.getElementById('etats').innerHTML += carte(t)));
+
+      const titres = [
+        ['--t-d1', '0.84', 'clamp(46, 8.4vw, 116)', 'Héros accueil', "On joue tous pour le même maillot"],
+        ['--t-d2', '0.88', 'clamp(40, 6.5vw, 80)', 'Héros de page · 8×', 'Rejoindre l\'ESGA'],
+        ['--t-d3', '0.92', 'clamp(34, 5vw, 52)', 'Section forte', 'Trouve ton équipe'],
+        ['--t-d4', '1', 'clamp(28, 4vw, 38)', 'Titre de section', 'Résultats & classements'],
+        ['--t-d5', '1', 'clamp(26, 3.4vw, 34)', 'Sous-section', 'Le bureau du club'],
+        ['--t-d6', '1', 'clamp(24, 3.2vw, 32)', 'Titre de carte', 'École de basket'],
+      ];
+      document.getElementById('typo-titre').innerHTML = titres
+        .map(
+          ([v, lh, val, role, txt]) => `<div class="ligne-typo">
+            <div class="meta">${v}<br>${val}<br>/${lh} · ${role}</div>
+            <div class="demo-titre" style="font-size:var(${v});line-height:${lh}">${txt}</div>
+          </div>`
+        )
+        .join('');
+
+      const textes = [
+        ['--t-chapo', '1.6', '400', 'Chapô'],
+        ['--t-corps', '1.65', '400', 'Corps'],
+        ['--t-sm', '1.7', '500', 'Petit'],
+        ['--t-xs', '1.6', '500', 'Très petit'],
+        ['--t-xxs', '1.55', '500', 'Mention'],
+      ];
+      document.getElementById('typo-texte').innerHTML = textes
+        .map(
+          ([v, lh, w, role]) => `<div class="ligne-typo">
+            <div class="meta">${v}<br>/${lh} · ${w} · ${role}</div>
+            <div class="demo-texte" style="font-size:var(${v});line-height:${lh};font-weight:${w}">
+              15 équipes, de l'école de basket aux seniors pré-régionaux. Un club formateur au cœur de l'Est lyonnais.
+            </div>
+          </div>`
+        )
+        .join('');
+
+      document.getElementById('typo-mono').innerHTML = `
+        <div class="ligne-typo">
+          <div class="meta">--t-etiquette<br>10.5px · 700 · 0.12em</div>
+          <div class="etiquette" style="color:var(--c-accent-texte)">Inscriptions ouvertes · dès 6 ans</div>
+        </div>
+        <div class="ligne-typo">
+          <div class="meta">--t-mono-corps<br>11px · 400 · 1.6</div>
+          <div style="font:400 var(--t-mono-corps)/1.6 var(--f-mono);color:var(--c-texte-2)">SOURCE FFBB · MAJ AUTOMATIQUE</div>
+        </div>
+        <div class="ligne-typo">
+          <div class="meta">--t-n2 · chiffres<br>34px · 700 · tabular-nums</div>
+          <div style="font:700 var(--t-n2)/1 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--c-titre)">78&nbsp;—&nbsp;64 &nbsp; 11&nbsp;—&nbsp;11</div>
+        </div>`;
+
+      document.getElementById('rayons').innerHTML = ['--r-sm', '--r-md', '--r-lg', '--r-xl', '--r-2xl', '--r-pilule']
+        .map((v) => `<div class="rayon-demo" style="border-radius:var(${v})">${v.replace('--r-', '')}</div>`)
+        .join('');
+
+      document.getElementById('ombres').innerHTML = ['--o-carte', '--o-carte-survol', '--o-accent']
+        .map((v) => `<div class="ombre-demo" style="box-shadow:var(${v});border-radius:var(--r-xl)">${v.replace('--o-', '')}</div>`)
+        .join('');
+    </script>
+  </body>
+</html>

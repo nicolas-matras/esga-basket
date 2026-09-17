@@ -1,0 +1,151 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_INSCRIPTIONS_PAGE, REQ_PARAMETRES, REQ_TARIFS } from '../lib/requetes';
+import { interroger } from '../lib/sanity';
+import { euros } from '../lib/format';
+import type { EntetePage as Entete } from '../lib/types';
+
+type Page = Entete & {
+  etapes?: { _key: string; titre?: string; texte?: string }[];
+  titreTarifs?: string;
+  mentionTarifs?: string;
+  faq?: { _key: string; question?: string; reponse?: string }[];
+  blocContact?: { titre?: string; texte?: string; libelleBouton?: string };
+};
+type Tarif = {
+  _id: string;
+  libelle?: string;
+  montant?: number | null;
+  categories?: { libelle?: string; anneesNaissance?: string }[];
+};
+
+const page = await interroger<Page>(REQ_INSCRIPTIONS_PAGE);
+const tarifs = await interroger<Tarif[]>(REQ_TARIFS);
+const parametres = await interroger<{ email?: string; emailLicences?: string }>(REQ_PARAMETRES);
+
+const aucunMontant = tarifs.every((t) => t.montant === null || t.montant === undefined);
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Inscriptions'} description={page?.seo?.description ?? page?.intro} page="inscriptions">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Inscriptions'} intro={page?.intro} />
+
+  {page?.etapes && page.etapes.length > 0 && (
+    <section class="section">
+      <div class="contenu grille grille--auto">
+        {page.etapes.map((e, i) => (
+          <article class="carte etape">
+            <span class="etape__numero chiffres">{String(i + 1).padStart(2, '0')}</span>
+            <h2 class="titre-3">{e.titre}</h2>
+            <p class="etape__texte">{e.texte}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="section section--douce">
+    <div class="contenu">
+      <h2 class="titre-2">{page?.titreTarifs ?? 'Tarifs par catégorie'}</h2>
+      {tarifs.length === 0 ? (
+        <p class="mention" style="margin-top:var(--e-6)">Grille tarifaire non renseignée.</p>
+      ) : (
+        <table class="tarifs chiffres">
+          <thead>
+            <tr>
+              <th scope="col">Catégorie</th>
+              <th scope="col" class="col-annees">Années</th>
+              <th scope="col" class="col-montant">Cotisation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tarifs.map((t) => (
+              <tr>
+                <td>{t.libelle}</td>
+                <td class="col-annees">
+                  {(t.categories ?? []).map((c) => c.anneesNaissance).filter(Boolean).join(' · ') || '—'}
+                </td>
+                <td class:list={['col-montant', t.montant == null && 'col-montant--vide']}>
+                  {euros(t.montant)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {aucunMontant && page?.mentionTarifs && (
+        <p class="mention" style="margin-top:var(--e-6)">
+          {page.mentionTarifs} — champ « cotisation » par catégorie dans le Studio
+        </p>
+      )}
+    </div>
+  </section>
+
+  {page?.faq && page.faq.length > 0 && (
+    <section class="section">
+      <div class="contenu">
+        <h2 class="titre-2">Questions fréquentes</h2>
+        <div class="faq">
+          {page.faq.map((q) => (
+            <details class="carte question">
+              <summary>{q.question}</summary>
+              <p>{q.reponse}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {page?.blocContact?.titre && (
+    <section class="section">
+      <div class="contenu carte bloc-contact">
+        <div>
+          <h2 class="titre-2">{page.blocContact.titre}</h2>
+          <p class="chapo">{page.blocContact.texte}</p>
+        </div>
+        <a
+          href={`mailto:${parametres?.emailLicences ?? parametres?.email ?? ''}`}
+          class="bouton bouton--principal"
+        >
+          {page.blocContact.libelleBouton} →
+        </a>
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .etape { padding: var(--e-11); display: grid; gap: var(--e-4); align-content: start; }
+  .etape__numero { font: 400 var(--t-n3) / 1 var(--f-titre); color: var(--c-accent); }
+  .etape__texte { margin: 0; font: 400 var(--t-xs) / 1.7 var(--f-texte); color: var(--c-texte-2); }
+
+  .tarifs { width: 100%; border-collapse: collapse; margin-top: var(--e-9); }
+  .tarifs th {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono); letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase; color: var(--c-texte-3); text-align: left;
+    padding-bottom: var(--e-3); border-bottom: 1px solid var(--c-bordure);
+  }
+  .tarifs td {
+    padding: var(--e-6) 0; border-bottom: 1px solid var(--c-bordure-douce);
+    font: 500 var(--t-xs) / 1.4 var(--f-texte); color: var(--c-texte);
+  }
+  .col-montant, th.col-montant { text-align: right; font-family: var(--f-mono); font-weight: 700; }
+  .col-montant--vide { color: var(--c-texte-3); font-weight: 400; }
+  .col-annees { color: var(--c-texte-2); }
+
+  .faq { display: grid; gap: var(--e-4); margin-top: var(--e-9); }
+  .question { padding: var(--e-7); }
+  .question summary {
+    cursor: pointer; font: 700 var(--t-sm) / 1.4 var(--f-texte); color: var(--c-titre);
+  }
+  .question p { margin: var(--e-5) 0 0; font: 400 var(--t-xs) / 1.7 var(--f-texte); color: var(--c-texte-2); }
+
+  .bloc-contact {
+    padding: var(--e-11); display: flex; align-items: center; justify-content: space-between;
+    gap: var(--e-8); flex-wrap: wrap;
+  }
+  @media (max-width: 620px) {
+    .col-annees { display: none; }
+  }
+</style>

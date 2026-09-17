@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "studio",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@esga/studio", "dev"],
+      "port": 3333
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@esga/web", "dev"],
+      "port": 4321
+    },
+    {
+      "name": "jetons",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4173", "--directory", "design"],
+      "port": 4173
+    }
+  ]
+}

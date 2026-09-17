@@ -1,0 +1,106 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_BUREAU, REQ_CLUB, REQ_PARAMETRES } from '../lib/requetes';
+import { interroger, urlImage, type SourceImage } from '../lib/sanity';
+import type { EntetePage as Entete } from '../lib/types';
+
+type Page = Entete & {
+  valeurs?: { _key: string; titre?: string; texte?: string }[];
+  photos?: SourceImage[];
+  titreBureau?: string;
+};
+type Membre = { _id: string; nom?: string; role?: string; email?: string; portrait?: SourceImage };
+
+const page = await interroger<Page>(REQ_CLUB);
+const bureau = await interroger<Membre[]>(REQ_BUREAU);
+const parametres = await interroger<{ salle?: string; adresse?: string; lienPlan?: string }>(REQ_PARAMETRES);
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Le club'} description={page?.seo?.description ?? page?.intro} page="club">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Le club'} intro={page?.intro} />
+
+  {page?.valeurs && page.valeurs.length > 0 && (
+    <section class="section">
+      <div class="contenu grille grille--auto">
+        {page.valeurs.map((v, i) => (
+          <article class="carte valeur">
+            <span class="valeur__numero chiffres">{String(i + 1).padStart(2, '0')}</span>
+            <h2 class="titre-3">{v.titre}</h2>
+            <p class="valeur__texte">{v.texte}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="contenu grille grille--large">
+      {[0, 1].map((i) => {
+        const src = urlImage(page?.photos?.[i], 900, 700);
+        return src ? (
+          <img class="photo" src={src} alt={page?.photos?.[i]?.alt ?? ''} loading="lazy" />
+        ) : (
+          <div class="photo photo--attente">
+            <span class="mention">photo {i === 0 ? 'vestiaire / causerie' : 'tribune Gonzales'} — 900×700</span>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+
+  <section class="section section--douce" id="bureau">
+    <div class="contenu">
+      <h2 class="titre-2">{page?.titreBureau ?? 'Le bureau'}</h2>
+      <div class="grille grille--auto" style="margin-top:var(--e-9)">
+        {bureau.map((m) => {
+          const portrait = urlImage(m.portrait, 300, 300);
+          return (
+            <article class="carte membre">
+              {portrait ? (
+                <img src={portrait} alt={m.nom ?? ''} width="72" height="72" loading="lazy" />
+              ) : (
+                <span class="membre__vide" aria-hidden="true"></span>
+              )}
+              <div>
+                <p class="membre__nom">{m.nom}</p>
+                <p class="surtitre">{m.role}</p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="contenu">
+      <h2 class="titre-2">Notre salle</h2>
+      <p class="chapo">
+        {parametres?.salle} — {parametres?.adresse}. Parking gratuit · buvette les soirs de match.
+      </p>
+      {parametres?.lienPlan && (
+        <a href={parametres.lienPlan} class="bouton bouton--secondaire" style="margin-top:var(--e-6)" target="_blank" rel="noopener noreferrer">
+          Itinéraire →
+        </a>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .valeur { padding: var(--e-11); display: grid; gap: var(--e-4); align-content: start; }
+  .valeur__numero { font: 400 var(--t-n3) / 1 var(--f-titre); color: var(--c-accent); }
+  .valeur__texte { margin: 0; font: 400 var(--t-xs) / 1.7 var(--f-texte); color: var(--c-texte-2); }
+  .photo { width: 100%; aspect-ratio: 9 / 7; object-fit: cover; border-radius: var(--r-xl); }
+  .photo--attente {
+    display: grid; place-items: center; background: var(--c-fond-doux);
+    border: 1px solid var(--c-bordure); text-align: center; padding: var(--e-8);
+  }
+  .membre { padding: var(--e-7); display: flex; align-items: center; gap: var(--e-5); }
+  .membre img, .membre__vide {
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: none;
+  }
+  .membre__vide { background: var(--c-fond-doux); border: 1px dashed var(--c-bordure); }
+  .membre__nom { margin: 0 0 4px; font: 400 var(--t-n7) / 1.1 var(--f-titre); text-transform: uppercase; color: var(--c-titre); }
+</style>

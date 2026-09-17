@@ -1,0 +1,270 @@
+---
+/**
+ * La carte de match.
+ *
+ * Le signal que la maquette n'exprimait pas : l'écart. « 78—64 » et « 78—76 »
+ * s'écrivent pareil mais racontent deux matchs opposés. Ici le rail représente
+ * le TOTAL des points marqués, partagé entre les deux équipes : la position de
+ * la césure dit qui a gagné et de combien, d'un coup d'œil.
+ *
+ * Le rail portant le total, aucun segment ne peut déborder de son conteneur —
+ * c'est le piège classique des barres de dépassement, évité par construction.
+ */
+import { compteARebours, dateCourte, heure, partageScore } from '../lib/format';
+import { urlImage } from '../lib/sanity';
+import type { Match } from '../lib/types';
+
+export interface Props {
+  match: Match;
+  /** Variante mise en avant, utilisée pour le prochain match de l'accueil. */
+  vedette?: boolean;
+}
+
+const { match, vedette = false } = Astro.props;
+
+const partage = partageScore(match);
+const rebours = match.statut === 'a-venir' ? compteARebours(match.debut) : null;
+const logo = urlImage(match.logoAdversaire, 120);
+const competition = match.competition?.libelle ?? match.equipe?.championnat ?? '';
+const surtitre = [match.equipe?.nom, competition].filter(Boolean).join(' · ');
+const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} · extérieur`;
+---
+
+<article class:list={['match', vedette && 'match--vedette', match.afficheDeLaSemaine && 'match--affiche']}>
+  <header class="match__entete">
+    <span class="surtitre">{surtitre}</span>
+    {rebours && <span class="match__rebours">{rebours}</span>}
+    {match.statut === 'en-cours' && <span class="match__live">Live{match.periode ? ` · ${match.periode}` : ''}</span>}
+  </header>
+
+  {
+    partage.jouable ? (
+      <>
+        <div class="match__scores chiffres">
+          <span class:list={['match__score', partage.gagne && 'match__score--vainqueur']}>
+            {match.scoreEsga}
+          </span>
+          <span class="match__opposition">
+            <span class="match__equipe">{match.equipe?.nom ?? 'ESGA'}</span>
+            <span class="match__contre">—</span>
+            <span class="match__equipe">{match.adversaire}</span>
+          </span>
+          <span class:list={['match__score', !partage.gagne && 'match__score--vainqueur']}>
+            {match.scoreAdverse}
+          </span>
+        </div>
+
+        {/* Le rail = le total des points. Les deux parts se le partagent. */}
+        <div
+          class="rail"
+          role="img"
+          aria-label={`${match.equipe?.nom ?? 'ESGA'} ${match.scoreEsga}, ${match.adversaire} ${match.scoreAdverse}`}
+        >
+          <span class="rail__part rail__part--esga" style={`width:${partage.partEsga}%`}></span>
+          <span class="rail__part rail__part--adverse" style={`width:${partage.partAdverse}%`}></span>
+        </div>
+
+        <p class="match__bilan mention">
+          {partage.gagne ? 'Victoire' : partage.ecart === 0 ? 'Nul' : 'Défaite'}
+          {partage.ecart !== 0 && ` de ${Math.abs(partage.ecart)} pt${Math.abs(partage.ecart) > 1 ? 's' : ''}`}
+          {' · '}
+          {partage.total} points au total
+        </p>
+      </>
+    ) : (
+      <>
+        <div class="match__affiche">
+          <span class="match__equipe-grande">{match.equipe?.nom ?? 'ESGA'}</span>
+          <span class="match__vs">VS</span>
+          <span class="match__adverse">
+            {logo ? <img src={logo} alt="" width="40" height="40" /> : <span class="match__logo-vide" aria-hidden="true"></span>}
+            <span class="match__equipe-grande">{match.adversaire}</span>
+          </span>
+        </div>
+        <p class="match__quand">
+          {dateCourte(match.debut)} · {heure(match.debut)} · {lieu}
+        </p>
+        {match.note && <p class="match__bilan mention">{match.note}</p>}
+      </>
+    )
+  }
+</article>
+
+<style>
+  .match {
+    background: var(--c-surface);
+    border: 1px solid var(--c-bordure);
+    border-radius: var(--r-xl);
+    box-shadow: var(--o-carte);
+    padding: var(--e-8);
+    transition: var(--transition-carte);
+    container-type: inline-size;
+  }
+  .match:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--o-carte-survol);
+  }
+  .match--affiche {
+    border-color: var(--c-accent);
+  }
+  .match--vedette {
+    background: var(--c-fond-encre);
+    border-color: transparent;
+    color: #fff;
+  }
+  .match--vedette .surtitre {
+    color: var(--brut-orange);
+  }
+
+  .match__entete {
+    display: flex;
+    align-items: center;
+    gap: var(--e-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--e-5);
+  }
+  .match__rebours,
+  .match__live {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: var(--r-pilule);
+    background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+    color: var(--c-accent-texte);
+  }
+  .match__live {
+    background: var(--c-accent);
+    color: #fff;
+  }
+
+  /* ---------- Rencontre jouée ---------- */
+  .match__scores {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--e-5);
+  }
+  .match__score {
+    font: 700 var(--t-n2) / 1 var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-texte-3);
+  }
+  .match__score--vainqueur {
+    color: var(--c-titre);
+  }
+  .match--vedette .match__score {
+    color: var(--brut-gris-08);
+  }
+  .match--vedette .match__score--vainqueur {
+    color: #fff;
+  }
+  .match__opposition {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+    font: 500 var(--t-xs) / 1.3 var(--f-texte);
+    color: var(--c-texte-2);
+    min-width: 0;
+  }
+  .match__equipe {
+    overflow-wrap: anywhere;
+  }
+  .match__contre {
+    color: var(--c-texte-3);
+  }
+
+  .rail {
+    display: flex;
+    height: 10px;
+    border-radius: var(--r-pilule);
+    overflow: hidden;
+    background: var(--c-rail);
+    margin: var(--e-5) 0 var(--e-3);
+  }
+  .rail__part {
+    display: block;
+    min-width: 0;
+  }
+  .rail__part--esga {
+    background: var(--c-accent);
+  }
+  .rail__part--adverse {
+    background: var(--brut-gris-06);
+  }
+  .match--vedette .rail {
+    background: rgb(255 255 255 / 0.12);
+  }
+  .match--vedette .rail__part--adverse {
+    background: rgb(255 255 255 / 0.3);
+  }
+
+  .match__bilan {
+    margin: 0;
+  }
+  .match--vedette .match__bilan {
+    color: var(--brut-gris-08);
+  }
+
+  /* ---------- Rencontre à venir ---------- */
+  .match__affiche {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--e-5);
+  }
+  .match__vs {
+    font: 400 var(--t-n6) / 1 var(--f-titre);
+    color: var(--c-accent);
+  }
+  .match__adverse {
+    display: flex;
+    align-items: center;
+    gap: var(--e-3);
+    justify-content: flex-end;
+    min-width: 0;
+  }
+  .match__adverse img,
+  .match__logo-vide {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex: none;
+    object-fit: contain;
+  }
+  .match__logo-vide {
+    background: var(--c-fond-doux);
+    border: 1px dashed var(--c-bordure);
+  }
+  .match__equipe-grande {
+    font: 400 var(--t-n7) / 1.15 var(--f-titre);
+    text-transform: uppercase;
+    color: var(--c-titre);
+    overflow-wrap: anywhere;
+  }
+  .match--vedette .match__equipe-grande {
+    color: #fff;
+  }
+  .match__quand {
+    margin: var(--e-5) 0 0;
+    font: 500 var(--t-xs) / 1.5 var(--f-texte);
+    color: var(--c-texte-2);
+  }
+  .match--vedette .match__quand {
+    color: var(--brut-gris-05);
+  }
+
+  /* Sous 340 px de carte, l'affiche passe en colonne. */
+  @container (max-width: 340px) {
+    .match__affiche {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
+    }
+    .match__adverse {
+      justify-content: center;
+    }
+  }
+</style>

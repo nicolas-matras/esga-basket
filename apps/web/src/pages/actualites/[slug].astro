@@ -1,0 +1,77 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REQ_ACTUALITES } from '../../lib/requetes';
+import { interroger, urlImage } from '../../lib/sanity';
+import { dateEtiquette } from '../../lib/format';
+import { toHTML } from '@portabletext/to-html';
+import type { Actualite } from '../../lib/types';
+import groq from 'groq';
+
+export async function getStaticPaths() {
+  const liste = await interroger<Actualite[]>(REQ_ACTUALITES);
+  return liste
+    .filter((a) => a.slug)
+    .map((a) => ({ params: { slug: a.slug as string } }));
+}
+
+const { slug } = Astro.params;
+
+const article = await interroger<
+  Actualite & { corps?: unknown[]; seo?: { titre?: string; description?: string } }
+>(
+  groq`*[_type == "actualite" && slug.current == $slug][0]{
+    _id, titre, "slug": slug.current, date, rubrique, extrait, corps,
+    image { asset, alt, hotspot, crop },
+    seo { titre, description }
+  }`,
+  { slug },
+);
+
+if (!article) return Astro.rewrite('/404');
+
+const image = urlImage(article.image, 1200, 800);
+// Le corps est facultatif : un club publie souvent juste un titre et une photo.
+const corps = Array.isArray(article.corps) && article.corps.length > 0
+  ? toHTML(article.corps as never, { components: {} })
+  : null;
+---
+
+<Base
+  titre={article.seo?.titre ?? article.titre}
+  description={article.seo?.description ?? article.extrait}
+  imagePartage={image}
+  page="actualites"
+>
+  <article class="section">
+    <div class="contenu article">
+      <p class="surtitre">
+        {dateEtiquette(article.date)}{article.rubrique ? ` · ${article.rubrique}` : ''}
+      </p>
+      <h1 class="titre-1">{article.titre}</h1>
+      {article.extrait && <p class="chapo">{article.extrait}</p>}
+
+      {image && <img class="article__image" src={image} alt={article.image?.alt ?? ''} />}
+
+      {corps ? (
+        <div class="article__corps" set:html={corps} />
+      ) : (
+        <p class="mention">Article à rédiger dans le Studio.</p>
+      )}
+
+      <a href="/actualites" class="bouton bouton--secondaire">← Toutes les actualités</a>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .article { max-width: 760px; display: grid; gap: var(--e-6); }
+  .article .titre-1 { margin-top: var(--e-3); }
+  .article__image { width: 100%; border-radius: var(--r-xl); margin-top: var(--e-6); }
+  .article__corps { font-size: var(--t-corps); line-height: var(--t-corps-lh); color: var(--c-texte); }
+  .article__corps :global(h2) {
+    font: 400 var(--t-d5) / 1.1 var(--f-titre); text-transform: uppercase;
+    color: var(--c-titre); margin: var(--e-11) 0 var(--e-5);
+  }
+  .article__corps :global(p) { margin: 0 0 var(--e-6); }
+  .article .bouton { justify-self: start; margin-top: var(--e-8); }
+</style>

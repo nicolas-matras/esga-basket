@@ -1,0 +1,323 @@
+/* =============================================================
+   ESGA Basket — jetons de design
+   Déduits de la maquette Claude Design « Site ESGA Genas Azieu ».
+   Les valeurs sont celles réellement employées dans la maquette
+   (relevées par fréquence), pas celles d'une charte théorique.
+   Les écarts volontaires sont signalés par « ÉCART ».
+   ============================================================= */
+
+/* ---------- Polices : fichiers exacts extraits du bundle ---------- */
+/* Archivo et JetBrains Mono sont variables : un seul fichier couvre 400→700. */
+
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/polices/anton-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/polices/anton-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700; /* fichier variable */
+  font-display: swap;
+  src: url('/polices/archivo-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/polices/archivo-var-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/polices/jetbrainsmono-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/polices/jetbrainsmono-var-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* ---------- Palette brute : les teintes de la maquette ---------- */
+  --brut-navy: #0c1b4a; /* 106 emplois — couleur de marque */
+  --brut-orange: #f26a24; /* 133 emplois — accent de marque */
+  --brut-encre: #06091a; /* fonds très sombres (ticker, pied de page) */
+  --brut-bleu-lien: #1e42a8;
+
+  /* Orange assombri pour le petit texte sur fond clair.
+     ÉCART : #f26a24 sur blanc plafonne à 3.06:1, insuffisant pour du texte.
+     Même teinte (20.4°) et même saturation (89 %), luminosité 55 % → 42 %. */
+  --brut-orange-texte: #ca4d0c; /* 4.59:1 sur blanc */
+
+  /* Neutres froids, tous dérivés du navy */
+  --brut-blanc: #ffffff;
+  --brut-gris-01: #f9fafc;
+  --brut-gris-02: #f4f5f8;
+  --brut-gris-03: #d9dde8;
+  --brut-gris-04: #cfd4e2;
+  --brut-gris-05: #c6cee6;
+  --brut-gris-06: #b8c0d4;
+  --brut-gris-07: #a9b4d8;
+  --brut-gris-08: #8c97bc;
+  --brut-gris-09: #7a86a1;
+  --brut-gris-10: #5a6484; /* fusionne #5a6484 (20×) et #5b6684 (14×), dérive de saisie */
+  --brut-gris-11: #42506e;
+  --brut-navy-02: #3a4a80;
+  --brut-navy-03: #1b2545;
+  --brut-navy-04: #141d38;
+  --brut-navy-05: #0a1136;
+
+  /* Sémantique sportive */
+  --brut-victoire: #4ade80; /* seule couleur d'état de la maquette */
+  --brut-defaite: #f2545b; /* ÉCART : absente de la maquette, ajoutée par symétrie */
+  --brut-victoire-texte: #15803d; /* ÉCART : #4ade80 sur blanc = 1.74:1, inutilisable */
+  --brut-defaite-texte: #c0353c;
+
+  /* ---------- Rôles — thème clair (celui de la maquette) ---------- */
+  --c-fond: var(--brut-blanc);
+  --c-fond-doux: var(--brut-gris-02);
+  --c-fond-inverse: var(--brut-navy);
+  --c-fond-encre: var(--brut-encre);
+  --c-surface: var(--brut-blanc);
+  --c-surface-haute: var(--brut-blanc);
+  --c-rail: var(--brut-gris-03); /* piste des barres de progression */
+
+  --c-titre: var(--brut-navy);
+  --c-texte: var(--brut-gris-11);
+  --c-texte-2: var(--brut-gris-10);
+  --c-texte-3: var(--brut-gris-09); /* gros texte / non-texte seulement : 3.65:1 */
+  --c-texte-sur-inverse: var(--brut-blanc);
+  --c-texte-2-sur-inverse: var(--brut-gris-05);
+  --c-texte-3-sur-inverse: var(--brut-gris-08);
+
+  --c-accent: var(--brut-orange); /* aplats, bordures, gros titres */
+  --c-accent-texte: var(--brut-orange-texte); /* petit texte sur fond clair */
+  --c-accent-sur-inverse: var(--brut-orange); /* 6.46:1 sur encre : conforme tel quel */
+  --c-lien: var(--brut-bleu-lien);
+  --c-lien-survol: var(--brut-orange-texte);
+
+  --c-bordure: rgb(12 27 74 / 0.13);
+  --c-bordure-forte: rgb(12 27 74 / 0.22);
+  --c-bordure-douce: rgb(12 27 74 / 0.08);
+
+  --c-victoire: var(--brut-victoire-texte);
+  --c-defaite: var(--brut-defaite-texte);
+  --c-victoire-pastille: var(--brut-victoire);
+  --c-defaite-pastille: var(--brut-defaite);
+
+  /* ---------- Typographie ---------- */
+  --f-titre: 'Anton', system-ui, sans-serif; /* toujours en capitales */
+  --f-texte: 'Archivo', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, monospace; /* chiffres, scores, étiquettes */
+
+  /* Échelle d'affichage — Anton, fluide, interligne serré */
+  --t-d1: clamp(46px, 8.4vw, 116px); --t-d1-lh: 0.84; /* héros accueil */
+  --t-d2: clamp(40px, 6.5vw, 80px);  --t-d2-lh: 0.88; /* héros de page (8×) */
+  --t-d3: clamp(34px, 5vw, 52px);    --t-d3-lh: 0.92;
+  --t-d4: clamp(28px, 4vw, 38px);    --t-d4-lh: 1;    /* titre de section */
+  --t-d5: clamp(26px, 3.4vw, 34px);  --t-d5-lh: 1;
+  --t-d6: clamp(24px, 3.2vw, 32px);  --t-d6-lh: 1;
+
+  /* Paliers fixes — chiffres de carte, scores, compteurs */
+  --t-n1: 40px; --t-n2: 34px; --t-n3: 30px; --t-n4: 24px;
+  --t-n5: 22px; --t-n6: 20px; --t-n7: 19px;
+
+  /* Texte courant — Archivo */
+  --t-chapo: clamp(15px, 1.4vw, 17px); --t-chapo-lh: 1.6;
+  --t-corps: 15.5px;   --t-corps-lh: 1.65;
+  --t-sm: 14px;        --t-sm-lh: 1.7;
+  --t-xs: 13px;        --t-xs-lh: 1.6;
+  --t-xxs: 12.5px;     --t-xxs-lh: 1.55;
+
+  /* Étiquettes — JetBrains Mono, 700, capitales, très interlettré */
+  --t-etiquette: 10.5px; --t-etiquette-lh: 1; /* 19 emplois : le motif dominant */
+  --t-etiquette-sm: 10px;
+  --t-mono-corps: 11px;  --t-mono-corps-lh: 1.6;
+
+  --ls-etiquette: 0.12em; /* 28 emplois */
+  --ls-etiquette-large: 0.16em;
+  --ls-titre: -0.01em;
+
+  /* ---------- Espacements ---------- */
+  --e-1: 6px;  --e-2: 8px;  --e-3: 10px; --e-4: 12px;
+  --e-5: 14px; --e-6: 16px; --e-7: 18px; --e-8: 20px;
+  --e-9: 22px; --e-10: 24px; --e-11: 30px;
+
+  --e-gouttiere: clamp(16px, 4vw, 32px); /* 27 emplois : la marge de page */
+  --e-section: clamp(30px, 4vw, 48px);   /* padding vertical de section */
+  --e-section-large: clamp(34px, 5vw, 60px);
+  --l-contenu: 1200px;
+
+  /* ---------- Rayons ---------- */
+  --r-sm: 6px;
+  --r-md: 10px;  /* champs de formulaire */
+  --r-lg: 12px;  /* 27 emplois */
+  --r-xl: 14px;  /* 26 emplois — carte */
+  --r-2xl: 16px;
+  --r-pilule: 99px; /* 23 emplois */
+  --r-rond: 50%;
+
+  /* ---------- Ombres : empilées et très douces, jamais de flou ---------- */
+  --o-carte: 0 1px 2px rgb(12 27 74 / 0.04), 0 18px 40px rgb(12 27 74 / 0.14);
+  --o-carte-survol: 0 2px 4px rgb(12 27 74 / 0.05), 0 26px 60px rgb(12 27 74 / 0.2);
+  --o-accent: 0 2px 6px rgb(242 106 36 / 0.18), 0 14px 34px rgb(242 106 36 / 0.42);
+
+  /* ---------- Mouvement ---------- */
+  /* ÉCART : la maquette laisse l'easing par défaut ; on passe à la courbe demandée. */
+  --courbe: cubic-bezier(0.32, 0.72, 0, 1);
+  --duree-rapide: 0.18s;
+  --duree: 0.25s;
+  --duree-lente: 0.45s;
+  --transition-carte: transform var(--duree) var(--courbe),
+    box-shadow var(--duree) var(--courbe);
+}
+
+/* ---------- Thème sombre : inversion des rôles ----------
+   La maquette ne traite que le thème clair. Le sombre réutilise ses propres
+   sections foncées (#06091A, #0C1B4A) comme fonds, et remonte les neutres
+   froids en textes. L'orange est conservé tel quel : 6.46:1 sur l'encre. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='clair']) {
+    --c-fond: var(--brut-encre);
+    --c-fond-doux: var(--brut-navy-05);
+    --c-fond-inverse: var(--brut-blanc);
+    --c-fond-encre: #000000;
+    --c-surface: var(--brut-navy-04);
+    --c-surface-haute: var(--brut-navy-03);
+    --c-rail: rgb(255 255 255 / 0.12);
+
+    --c-titre: var(--brut-blanc);
+    --c-texte: var(--brut-gris-05);
+    --c-texte-2: var(--brut-gris-08);
+    --c-texte-3: var(--brut-gris-09);
+    --c-texte-sur-inverse: var(--brut-navy);
+    --c-texte-2-sur-inverse: var(--brut-gris-11);
+    --c-texte-3-sur-inverse: var(--brut-gris-10);
+
+    --c-accent: var(--brut-orange);
+    --c-accent-texte: var(--brut-orange); /* 6.46:1 sur l'encre : pas d'assombrissement */
+    --c-accent-sur-inverse: var(--brut-orange-texte);
+    --c-lien: #8fa8ff;
+    --c-lien-survol: var(--brut-orange);
+
+    --c-bordure: rgb(255 255 255 / 0.12);
+    --c-bordure-forte: rgb(255 255 255 / 0.24);
+    --c-bordure-douce: rgb(255 255 255 / 0.06);
+
+    --c-victoire: var(--brut-victoire);
+    --c-defaite: var(--brut-defaite);
+
+    --o-carte: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 40px rgb(0 0 0 / 0.55);
+    --o-carte-survol: 0 2px 4px rgb(0 0 0 / 0.45), 0 26px 60px rgb(0 0 0 / 0.65);
+    --o-accent: 0 2px 6px rgb(242 106 36 / 0.25), 0 14px 34px rgb(242 106 36 / 0.3);
+  }
+}
+
+/* Surcharge explicite, indépendante de la préférence système */
+:root[data-theme='sombre'] {
+  --c-fond: var(--brut-encre);
+  --c-fond-doux: var(--brut-navy-05);
+  --c-fond-inverse: var(--brut-blanc);
+  --c-fond-encre: #000000;
+  --c-surface: var(--brut-navy-04);
+  --c-surface-haute: var(--brut-navy-03);
+  --c-rail: rgb(255 255 255 / 0.12);
+
+  --c-titre: var(--brut-blanc);
+  --c-texte: var(--brut-gris-05);
+  --c-texte-2: var(--brut-gris-08);
+  --c-texte-3: var(--brut-gris-09);
+  --c-texte-sur-inverse: var(--brut-navy);
+  --c-texte-2-sur-inverse: var(--brut-gris-11);
+  --c-texte-3-sur-inverse: var(--brut-gris-10);
+
+  --c-accent: var(--brut-orange);
+  --c-accent-texte: var(--brut-orange);
+  --c-accent-sur-inverse: var(--brut-orange-texte);
+  --c-lien: #8fa8ff;
+  --c-lien-survol: var(--brut-orange);
+
+  --c-bordure: rgb(255 255 255 / 0.12);
+  --c-bordure-forte: rgb(255 255 255 / 0.24);
+  --c-bordure-douce: rgb(255 255 255 / 0.06);
+
+  --c-victoire: var(--brut-victoire);
+  --c-defaite: var(--brut-defaite);
+
+  --o-carte: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 40px rgb(0 0 0 / 0.55);
+  --o-carte-survol: 0 2px 4px rgb(0 0 0 / 0.45), 0 26px 60px rgb(0 0 0 / 0.65);
+  --o-accent: 0 2px 6px rgb(242 106 36 / 0.25), 0 14px 34px rgb(242 106 36 / 0.3);
+}
+
+/* ---------- Bases ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--c-fond);
+  color: var(--c-texte);
+  font-family: var(--f-texte);
+  font-size: var(--t-corps);
+  line-height: var(--t-corps-lh);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tous les chiffres s'alignent verticalement : scores, classements, tarifs. */
+table,
+time,
+[data-chiffres],
+.chiffres {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

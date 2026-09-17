@@ -1,0 +1,103 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_AGENDA_PAGE, REQ_MATCHS_A_VENIR } from '../lib/requetes';
+import { interroger } from '../lib/sanity';
+import { dateLongue, heure } from '../lib/format';
+import type { EntetePage as Entete, Match } from '../lib/types';
+
+type Bloc = { surtitre?: string; titre?: string; texte?: string; libelleBouton?: string; url?: string };
+const page = await interroger<Entete & { blocConvocations?: Bloc }>(REQ_AGENDA_PAGE);
+const matchs = await interroger<Match[]>(REQ_MATCHS_A_VENIR);
+
+// Regroupement par journée, dans l'ordre chronologique.
+const parJour = new Map<string, Match[]>();
+for (const m of matchs) {
+  if (!m.debut) continue;
+  const cle = m.debut.slice(0, 10);
+  parJour.set(cle, [...(parJour.get(cle) ?? []), m]);
+}
+const journees = [...parJour.entries()].sort(([a], [b]) => a.localeCompare(b));
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Agenda'} description={page?.seo?.description ?? page?.intro} page="agenda">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Agenda'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu">
+      {journees.length === 0 ? (
+        <p class="mention">Aucune rencontre programmée pour le moment.</p>
+      ) : (
+        journees.map(([jour, rencontres]) => (
+          <div class="journee">
+            <h2 class="titre-3">{dateLongue(jour)}</h2>
+            <ul class="journee__liste">
+              {rencontres.map((m) => (
+                <li class:list={['ligne', m.afficheDeLaSemaine && 'ligne--affiche']}>
+                  <span class="ligne__heure chiffres">{heure(m.debut)}</span>
+                  <span class="ligne__equipe">{m.equipe?.nom}</span>
+                  <span class="ligne__adversaire">{m.adversaire}</span>
+                  <span class="ligne__lieu">
+                    {m.lieu}
+                    {m.afficheDeLaSemaine
+                      ? ' · affiche de la semaine'
+                      : m.domicile
+                        ? ' · domicile'
+                        : ' · extérieur'}
+                    {m.note ? ` · ${m.note}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      )}
+    </div>
+  </section>
+
+  {page?.blocConvocations?.titre && (
+    <section class="section">
+      <div class="contenu">
+        <div class="carte bloc-convoc">
+          <p class="surtitre">{page.blocConvocations.surtitre}</p>
+          <h2 class="titre-2">{page.blocConvocations.titre}</h2>
+          <p class="chapo">{page.blocConvocations.texte}</p>
+          {page.blocConvocations.url ? (
+            <a href={page.blocConvocations.url} class="bouton bouton--principal">
+              {page.blocConvocations.libelleBouton} →
+            </a>
+          ) : (
+            <p class="mention">lien des convocations à renseigner</p>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .journee + .journee { margin-top: var(--e-11); }
+  .journee__liste { list-style: none; margin: var(--e-6) 0 0; padding: 0; }
+  .ligne {
+    display: grid;
+    grid-template-columns: 64px 70px minmax(0, 1fr) auto;
+    gap: var(--e-5);
+    align-items: baseline;
+    padding: var(--e-6) 0;
+    border-bottom: 1px solid var(--c-bordure-douce);
+  }
+  .ligne--affiche { box-shadow: inset 3px 0 0 var(--c-accent); padding-left: var(--e-5); }
+  .ligne__heure { font: 700 var(--t-sm) / 1 var(--f-mono); color: var(--c-titre); }
+  .ligne__equipe {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono); letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase; color: var(--c-accent-texte);
+  }
+  .ligne__adversaire { font: 500 var(--t-xs) / 1.4 var(--f-texte); color: var(--c-titre); }
+  .ligne__lieu { font: 400 var(--t-mono-corps) / 1.4 var(--f-mono); color: var(--c-texte-3); text-transform: uppercase; }
+  .bloc-convoc { padding: var(--e-11); display: grid; gap: var(--e-5); }
+  .bloc-convoc .bouton { justify-self: start; }
+  @media (max-width: 700px) {
+    .ligne { grid-template-columns: 58px minmax(0, 1fr); row-gap: var(--e-2); }
+    .ligne__lieu { grid-column: 2; }
+  }
+</style>

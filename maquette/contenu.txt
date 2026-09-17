@@ -1,0 +1,342 @@
+@@@@ PAGE ticker @@@@
+
+ LIVE SM1 47—41 Q3 SF1 V 52-49 À BOUCHOUX U15M 61—58 MIONNAY U11F PLATEAU DIM 10H TOURNOI ESGA 5-6-7 JUIN SM2 · DM3 POULE B · 4e LIVE SM1 47—41 Q3 SF1 V 52-49 À BOUCHOUX U15M 61—58 MIONNAY U11F PLATEAU DIM 10H TOURNOI ESGA 5-6-7 JUIN SM2 · DM3 POULE B · 4e 
+
+ {{ item.label }} 
+
+ S'inscrire 2026/27 
+
+@@@@ PAGE isAccueil @@@@
+
+ INSCRIPTIONS OUVERTES · DÈS 6 ANS 
+ On joue tous pour le même maillot 
+ 15 équipes, de l'école de basket aux seniors pré-régionaux. Un club formateur au cœur de l'Est lyonnais : tu viens tester un entraînement, on s'occupe du reste. 
+
+ Rejoindre le club → 
+ ▶ Le club en 40s 
+
+ 15 ÉQUIPES ENGAGÉES 
+ U9 → SR TOUTES CATÉGORIES 
+ 5·6·7 JUIN TOURNOI ANNUEL ESGA 
+
+ photo à fournir — équipe au Gonzales, portrait 900×1200 
+
+ PROCHAIN MATCH J-3 
+
+ VS 
+ logo adverse 
+
+ Beaumarchais Lyon Métropole 
+ Sam. 26 sept · 20h30 · Gonzales 
+ Ajouter à mon agenda 
+
+ 1er ENTRAÎNEMENT OFFERT 
+
+ Nuit de match 
+ AGENDA COMPLET ↗ 
+
+ SM1 · PRÉ-RÉGIONALE 
+ ESGA 1 reçoit Beaumarchais 
+ Sam. 26 sept · 20h30 · Gonzales 
+
+ SF1 · DF2 POULE B 
+ Communay reçoit ESGA 1 
+ Dim. 27 sept · 15h30 · Communay 
+
+ U13F · PLATEAU 
+ ESGA reçoit Irigny Vernaison 
+ Sam. 26 sept · 13h00 · Gonzales 
+
+ Classement PRM poule A2 SOURCE FFBB · MAJ AUTOMATIQUE 
+
+ # ÉQUIPE PTS DIFF 
+
+ {{ row.rank }} 
+ {{ row.team }} 
+ {{ row.pts }} 
+ {{ row.diff }} 
+
+ classement d'exemple — remplacé par le flux FFBB au build 
+
+ Trouve ton équipe 
+ LES 15 ÉQUIPES ↗ 
+
+ U9 —U11 
+ École de basket 
+ Mercredi après-midi · plateaux le samedi 
+
+ U13 —U15 
+ Compétition départementale 
+ 2 entraînements · match le week-end 
+
+ U18 
+ Formation & arbitrage 
+ Passerelle vers les seniors 
+
+ SR 
+ PRM · DM3 · DF2 · loisir 
+ Compétition 5×5, loisir et 3×3 
+
+ La vie du club 
+ TOUTES LES ACTUS ↗ 
+
+ photo 600×360 
+ 12 SEPT · ÉCOLE DE BASKET Reprise des U9 : 38 enfants sur le parquet 
+
+ photo 600×360 
+ 05 SEPT · SENIORS Les SM1 lancent leur saison en pré-régionale 
+
+ ON A BESOIN DE TOI 
+ Bénévole ou arbitre Table de marque, buvette, transport : quelques heures suffisent. 
+ Je me propose → 
+
+ S'inscrire, c'est 3 étapes 
+ Licence FFBB, certificat médical, cotisation. Paiement en 3 fois et pass'Sport acceptés. 
+ Ouvrir le formulaire → 
+
+ 01 Essai gratuit Un entraînement offert dans ta catégorie 
+ 02 Dossier en ligne Formulaire FFBB + certificat, 10 minutes 
+ 03 Cotisation Tarifs par catégorie à confirmer 
+
+@@@@ PAGE isClub @@@@
+
+ LE CLUB 
+ Un club de village, un jeu de ville 
+ L'Éveil Sportif Genas Azieu fait pratiquer le basket aux enfants dès 6 ans et engage 15 équipes chaque saison, de l'école de basket aux seniors pré-régionaux. Tout se joue au Complexe Sportif Marcel Gonzales, à Genas. 
+
+ 01 
+ Former avant tout 
+ Des éducateurs diplômés à chaque catégorie, une progression pensée de l'U9 aux seniors. 
+
+ 02 
+ Respect & collectif 
+ Arbitres, adversaires, coéquipiers, bénévoles : au club, personne ne joue seul. 
+
+ 03 
+ Ouvert à tous 
+ Compétition 5×5, loisir et 3×3 : chacun trouve son niveau et son créneau. 
+
+ photo — vestiaire / causerie, 900×700 
+ photo — tribune Gonzales, 900×700 
+
+ Le bureau 
+
+ portrait 
+ Vincent Calleau 
+ PRÉSIDENT 
+
+ portrait 
+ Noémie Mazaud 
+ CORRESPONDANTE 
+
+ trésorier·ère à compléter 
+ secrétaire à compléter 
+ responsable technique 
+
+ Notre salle 
+ Complexe Sportif Marcel Gonzales 2 rue de la Fraternité, 69740 Genas Parking gratuit · buvette les soirs de match 
+
+ Itinéraire → 
+ Créneaux d'entraînement 
+
+ carte / plan d'accès 
+
+@@@@ PAGE isEquipes @@@@
+
+ ÉQUIPES & CATÉGORIES 
+ 15 équipes, une seule couleur 
+ Filtre par catégorie pour voir le championnat, les créneaux et le coach de chaque équipe. 
+
+ {{ c.label }} 
+
+ photo d'équipe 600×340 
+
+ {{ t.name }} {{ t.champ }} 
+ {{ t.slots }} 
+ Coach · {{ t.coach }} 
+
+ créneaux et coachs à confirmer — champ éditable dans Sanity 
+
+@@@@ PAGE isResultats @@@@
+
+ RÉSULTATS & CLASSEMENTS 
+ Où en sont les équipes 
+
+ {{ c.label }} 
+
+ # ÉQUIPE PTS JO DIFF 
+
+ {{ row.rank }} 
+ {{ row.team }} 
+ {{ row.pts }} 
+ {{ row.played }} 
+ {{ row.diff }} 
+
+ données d'exemple — alimenté par le flux FFBB au build (revalidation quotidienne) 
+
+ Derniers résultats 
+
+ ESGA 1 SM1 
+ 78 — 64 
+ CO St Fons Basket 
+
+ Bouchoux 
+ 49 — 52 
+ ESGA 1 SF1 
+
+ ESGA U15M 
+ 61 — 58 
+ ASC Mionnay 
+
+@@@@ PAGE isAgenda @@@@
+
+ AGENDA 
+ Le week-end du club 
+
+ Semaine du 22 au 28 sept 
+ Semaine suivante → 
+ Exporter (.ics) 
+
+ Samedi 26 septembre 
+
+ 13:00 U13F — Irigny Vernaison Gonzales · domicile 
+ 15:00 U15M — ASC Mionnay Mionnay · extérieur 
+ 18:30 SM2 — AS Andéolaise 2 Gonzales · domicile 
+ 20:30 SM1 — Beaumarchais Lyon Métropole Gonzales · affiche de la semaine 
+
+ Dimanche 27 septembre 
+
+ 10:00 U11F — plateau à Genas Gonzales · 3 clubs invités 
+ 15:30 SF1 — BC Communay Ternay Communay · extérieur 
+
+ CONVOCATIONS 
+ Ton créneau de table de marque 
+ Les convocations arbitres et table sont publiées chaque mercredi soir. 
+ Voir les convocations 
+
+@@@@ PAGE isActus @@@@
+
+ ACTUALITÉS 
+ La vie du club 
+
+ photo à la une 1200×800 
+
+ À LA UNE · 12 SEPT 
+ Reprise de l'école de basket : 38 enfants sur le parquet 
+ Premier mercredi de la saison au Gonzales. Deux groupes U9, trois éducateurs, et déjà des paniers qui rentrent. 
+ Lire l'article → 
+
+ photo 600×360 
+ 05 SEPT · SENIORS Les SM1 lancent la saison en pré-régionale 
+
+ photo 600×360 
+ 28 AOÛT · TOURNOI Le tournoi ESGA revient les 5, 6 et 7 juin 
+
+ photo 600×360 
+ 20 AOÛT · CLUB Nouveau textile club : la collection 2026 
+
+ photo 600×360 
+ 10 JUIL · FORMATION Trois jeunes arbitres formés au club 
+
+ La newsletter du club 
+ Un mail par mois : résultats, convocations, événements. 
+
+ Je m'abonne 
+
+@@@@ PAGE isInscriptions @@@@
+
+ SAISON 2026 / 2027 
+ Rejoindre l'ESGA 
+ Premier entraînement offert, dossier en ligne, paiement en 3 fois. Pass'Sport et Coupons Sport acceptés. 
+
+ 01 Viens essayer Un entraînement gratuit dans ta catégorie, sans engagement. 
+ 02 Dossier en ligne Formulaire FFBB, photo, certificat médical ou questionnaire de santé. 
+ 03 Cotisation Par virement, CB ou chèques. Réduction à partir du 2e licencié d'une famille. 
+
+ Tarifs par catégorie 
+
+ CATÉGORIE COTISATION 
+ École de basket (U7—U9) à définir 
+ U11 — U13 à définir 
+ U15 — U18 à définir 
+ Seniors compétition à définir 
+ Loisir 5×5 / 3×3 à définir 
+
+ montants à renseigner — champ Sanity « tarif » par catégorie 
+
+ Questions fréquentes 
+
+ À partir de quel âge ? Dès 6 ans à l'école de basket, sur le créneau du mercredi. 
+ Faut-il du matériel ? Une paire de chaussures de salle suffit. Le maillot de match est fourni par le club. 
+ Peut-on jouer sans compétition ? Oui : le club propose du loisir 5×5 et du 3×3, sans championnat le week-end. 
+
+ Une question sur le dossier ? Écris-nous, on répond sous 48h. Nous contacter 
+
+@@@@ PAGE isPartenaires @@@@
+
+ PARTENAIRES 
+ Votre marque sur le parquet 
+ Plus de 200 licenciés et leurs familles, une quinzaine de rencontres à domicile par saison, un tournoi de trois jours en juin : une visibilité locale réelle, à Genas et dans l'Est lyonnais. 
+
+ PACK Supporter Logo sur le site Mention sur les réseaux 2 invitations au tournoi montant à définir 
+ LE PLUS CHOISI Club Panneau en salle Logo sur les maillots d'échauffement Post dédié + page partenaire montant à définir 
+ PACK Maillot Logo sur le maillot de match d'une équipe Présence au tournoi ESGA Reçu fiscal mécénat montant à définir 
+
+ Ils nous soutiennent 
+
+ logo 240×120 
+ logo 240×120 
+ logo 240×120 
+ logo 240×120 
+ logo 240×120 
+ logo 240×120 
+
+ Parlons-en autour d'un match Le dossier partenaire complet est disponible sur demande. 
+ Demander le dossier 
+
+@@@@ PAGE isBoutique @@@@
+
+ BOUTIQUE 
+ Le textile du club 
+ Commande groupée deux fois par saison : tu choisis, le club commande, tu récupères au gymnase. 
+
+ photo produit 800×800 
+
+ {{ p.name }} 
+ {{ p.detail }} 
+ {{ p.price }} Ajouter → 
+
+ PROCHAINE COMMANDE GROUPÉE Clôture le 15 octobre Retrait au gymnase deux semaines après la clôture. Floquage prénom offert. 
+ Voir mon panier 
+
+ prix et tailles à renseigner — collection gérée dans Sanity 
+
+@@@@ PAGE isContact @@@@
+
+ CONTACT & ACCÈS 
+ On se voit au Gonzales 
+
+ ADRESSE Complexe Sportif Marcel Gonzales 2 rue de la Fraternité, 69740 Genas 
+ CONTACT president.esgabasket@gmail.com 06 88 59 67 20 Club FFBB ARA0069090 
+ RÉSEAUX @esgagenas Facebook 
+
+ carte interactive (plan d'accès) 
+
+ Écrire au club 
+
+ Motif — inscription Motif — bénévolat / arbitrage Motif — partenariat Motif — autre 
+
+ Envoyer → 
+ formulaire branché sur Netlify Forms 
+
+ Éveil Sportif Genas Azieu 
+ Club affilié FFBB — Comité du Rhône & Métropole de Lyon 
+
+ LE CLUB Histoire & valeurs Le bureau Équipes & coachs Bénévoles 
+ PRATIQUE Inscriptions & tarifs Agenda Résultats Boutique 
+
+ NOUS TROUVER 
+ Complexe Sportif Marcel Gonzales 2 rue de la Fraternité, 69740 Genas 06 88 59 67 20 president.esgabasket@gmail.com 
+ @esgagenas Facebook 
+
+ © 2026 ESGA BASKET · ARA0069090 MENTIONS LÉGALES · CONFIDENTIALITÉ

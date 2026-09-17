@@ -1,0 +1,553 @@
+---
+/**
+ * Gabarit commun : en-tête collant, bandeau de scores, navigation, pied de page.
+ *
+ * Écart assumé par rapport à la maquette : elle n'a pas de menu mobile. Sous
+ * 900 px, la navigation passe en panneau déroulant piloté par un bouton burger.
+ */
+import { REQ_MATCHS_BANDEAU, REQ_PARAMETRES } from '../lib/requetes';
+import { interroger, urlImage } from '../lib/sanity';
+import { dateCourte, heure } from '../lib/format';
+import '../styles/tokens.css';
+import '../styles/base.css';
+
+export interface Props {
+  titre: string;
+  description?: string;
+  imagePartage?: string | null;
+  page?: string;
+}
+
+const { titre, description, imagePartage, page } = Astro.props;
+
+type Parametres = {
+  nom?: string;
+  nomComplet?: string;
+  numeroFFBB?: string;
+  mentionAffiliation?: string;
+  salle?: string;
+  adresse?: string;
+  email?: string;
+  telephone?: string;
+  lienPlan?: string;
+  logo?: Parameters<typeof urlImage>[0];
+  reseaux?: { plateforme: string; libelle: string; url: string }[];
+  bandeauActif?: boolean;
+  bandeauMessages?: string[];
+  accrochePied?: string;
+  lienMentions?: { libelle: string; url: string }[];
+};
+
+type MatchBandeau = {
+  _id: string;
+  adversaire?: string;
+  debut?: string;
+  statut?: string;
+  periode?: string;
+  scoreEsga?: number | null;
+  scoreAdverse?: number | null;
+  equipe?: { nom?: string };
+};
+
+const parametres = await interroger<Parametres>(REQ_PARAMETRES);
+const matchsBandeau = await interroger<MatchBandeau[]>(REQ_MATCHS_BANDEAU);
+
+const logo = urlImage(parametres?.logo, 120) ?? '/logo-esga.png';
+
+const navigation = [
+  { libelle: 'Le club', url: '/club', cle: 'club' },
+  { libelle: 'Équipes', url: '/equipes', cle: 'equipes' },
+  { libelle: 'Résultats', url: '/resultats', cle: 'resultats' },
+  { libelle: 'Agenda', url: '/agenda', cle: 'agenda' },
+  { libelle: 'Actus', url: '/actualites', cle: 'actualites' },
+  { libelle: 'Partenaires', url: '/partenaires', cle: 'partenaires' },
+  { libelle: 'Boutique', url: '/boutique', cle: 'boutique' },
+  { libelle: 'Contact', url: '/contact', cle: 'contact' },
+];
+
+/** Le bandeau se remplit tout seul depuis les matchs, plus les messages fixes. */
+function libelleBandeau(m: MatchBandeau): string | null {
+  const equipe = m.equipe?.nom ?? '';
+  if (m.statut === 'en-cours' && m.scoreEsga != null && m.scoreAdverse != null) {
+    return `LIVE ${equipe} ${m.scoreEsga}—${m.scoreAdverse}${m.periode ? ' ' + m.periode : ''}`;
+  }
+  if (m.statut === 'termine' && m.scoreEsga != null && m.scoreAdverse != null) {
+    const issue = m.scoreEsga > m.scoreAdverse ? 'V' : m.scoreEsga < m.scoreAdverse ? 'D' : 'N';
+    return `${equipe} ${issue} ${m.scoreEsga}—${m.scoreAdverse} ${m.adversaire ?? ''}`.trim();
+  }
+  if (m.statut === 'a-venir' && m.debut) {
+    return `${equipe} ${dateCourte(m.debut)} ${heure(m.debut)}`.trim();
+  }
+  return null;
+}
+
+const messagesBandeau = [
+  ...matchsBandeau.map(libelleBandeau).filter((x): x is string => Boolean(x)),
+  ...(parametres?.bandeauMessages ?? []),
+];
+const bandeauVisible = parametres?.bandeauActif !== false && messagesBandeau.length > 0;
+
+const urlSite = import.meta.env.PUBLIC_SITE_URL ?? 'http://localhost:4321';
+const canonical = new URL(Astro.url.pathname, urlSite).href;
+const indexable = import.meta.env.PUBLIC_ENV === 'production';
+const titreComplet = `${titre} — ${parametres?.nom ?? 'ESGA Basket'}`;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titreComplet}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/logo-esga.png" type="image/png" />
+    {!indexable && <meta name="robots" content="noindex, nofollow" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={titreComplet} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="fr_FR" />
+    {imagePartage && <meta property="og:image" content={imagePartage} />}
+
+    <!-- Les polices sont hébergées sur le site : pas d'appel à un CDN tiers. -->
+    <link
+      rel="preload"
+      href="/polices/anton-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/polices/archivo-var-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+
+  <body>
+    <a class="lien-evitement" href="#contenu">Aller au contenu</a>
+
+    {
+      bandeauVisible && (
+        <div class="bandeau" aria-hidden="true">
+          <div class="bandeau__piste">
+            {[0, 1].map(() => (
+              <div class="bandeau__serie">
+                {messagesBandeau.map((m) => (
+                  <span class="bandeau__item">{m}</span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    <header class="entete">
+      <div class="contenu entete__interieur">
+        <a href="/" class="entete__marque" aria-label="Accueil — {parametres?.nom}">
+          <img src={logo} alt="" width="52" height="52" />
+        </a>
+
+        <nav class="nav" id="nav-principale" aria-label="Navigation principale">
+          <ul class="nav__liste">
+            {
+              navigation.map((item) => (
+                <li>
+                  <a
+                    href={item.url}
+                    class="nav__lien"
+                    aria-current={page === item.cle ? 'page' : undefined}
+                  >
+                    {item.libelle}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+          <a href="/inscriptions" class="bouton bouton--principal nav__cta">
+            <span class="pastille" aria-hidden="true"></span>
+            S'inscrire 2026/27
+          </a>
+        </nav>
+
+        <button
+          class="burger"
+          type="button"
+          aria-expanded="false"
+          aria-controls="nav-principale"
+          aria-label="Ouvrir le menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <main id="contenu">
+      <slot />
+    </main>
+
+    <footer class="pied">
+      <div class="contenu pied__interieur">
+        <div class="pied__marque">
+          <img src={logo} alt="" width="60" height="60" />
+          <div>
+            <div class="pied__nom">{parametres?.accrochePied ?? parametres?.nomComplet}</div>
+            <div class="pied__mention">{parametres?.mentionAffiliation}</div>
+          </div>
+        </div>
+
+        <div class="pied__colonnes">
+          <div>
+            <h2 class="surtitre">Le club</h2>
+            <ul class="pied__liste">
+              <li><a href="/club">Histoire &amp; valeurs</a></li>
+              <li><a href="/club#bureau">Le bureau</a></li>
+              <li><a href="/equipes">Équipes &amp; coachs</a></li>
+              <li><a href="/contact">Bénévoles</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="surtitre">Pratique</h2>
+            <ul class="pied__liste">
+              <li><a href="/inscriptions">Inscriptions &amp; tarifs</a></li>
+              <li><a href="/agenda">Agenda</a></li>
+              <li><a href="/resultats">Résultats</a></li>
+              <li><a href="/boutique">Boutique</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="surtitre">Nous trouver</h2>
+            <ul class="pied__liste">
+              <li>{parametres?.salle}</li>
+              <li>{parametres?.adresse}</li>
+              {parametres?.telephone && (
+                <li><a href={`tel:${parametres.telephone.replace(/\s/g, '')}`}>{parametres.telephone}</a></li>
+              )}
+              {parametres?.email && <li><a href={`mailto:${parametres.email}`}>{parametres.email}</a></li>}
+            </ul>
+            <ul class="pied__reseaux">
+              {
+                (parametres?.reseaux ?? []).map((r) => (
+                  <li>
+                    <a href={r.url} rel="noopener noreferrer" target="_blank">
+                      {r.libelle}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+
+        <div class="pied__bas">
+          <span class="mention">
+            © {new Date().getFullYear()} {parametres?.nom} · {parametres?.numeroFFBB}
+          </span>
+          <span class="mention">
+            {
+              (parametres?.lienMentions ?? []).map((l, i) => (
+                <>
+                  {i > 0 && ' · '}
+                  <a href={l.url}>{l.libelle}</a>
+                </>
+              ))
+            }
+          </span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Menu mobile : absent de la maquette, ajouté pour les petits écrans.
+      const burger = document.querySelector<HTMLButtonElement>('.burger');
+      const nav = document.querySelector<HTMLElement>('.nav');
+      if (burger && nav) {
+        burger.addEventListener('click', () => {
+          const ouvert = burger.getAttribute('aria-expanded') === 'true';
+          burger.setAttribute('aria-expanded', String(!ouvert));
+          burger.setAttribute('aria-label', ouvert ? 'Ouvrir le menu' : 'Fermer le menu');
+          nav.classList.toggle('nav--ouverte', !ouvert);
+          document.body.style.overflow = ouvert ? '' : 'hidden';
+        });
+        // Échap referme le panneau.
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && nav.classList.contains('nav--ouverte')) burger.click();
+        });
+      }
+    </script>
+
+    <style>
+      /* ---------- Bandeau défilant ---------- */
+      .bandeau {
+        background: var(--c-fond-encre);
+        color: #fff;
+        overflow: hidden;
+        padding: 9px 0;
+        border-bottom: 1px solid rgb(255 255 255 / 0.06);
+      }
+      .bandeau__piste {
+        display: flex;
+        width: max-content;
+        animation: defiler 42s linear infinite;
+      }
+      .bandeau__serie {
+        display: flex;
+        gap: 34px;
+        padding-right: 34px;
+      }
+      .bandeau__item {
+        font: 700 var(--t-etiquette) / 1 var(--f-mono);
+        letter-spacing: var(--ls-etiquette);
+        text-transform: uppercase;
+        color: rgb(255 255 255 / 0.88);
+        white-space: nowrap;
+      }
+      @keyframes defiler {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bandeau__piste {
+          animation: none;
+        }
+        .bandeau {
+          overflow-x: auto;
+        }
+      }
+
+      /* ---------- En-tête ---------- */
+      .entete {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        border-bottom: 1px solid var(--c-bordure-douce);
+        isolation: isolate;
+      }
+      /*
+        Le flou est porté par un pseudo-élément, pas par .entete.
+        `backdrop-filter` fait de son élément le bloc conteneur de ses
+        descendants `position: fixed` : posé sur .entete, il enfermait le
+        panneau de navigation mobile dans les 110 px de hauteur du header.
+      */
+      .entete::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: color-mix(in srgb, var(--c-fond) 94%, transparent);
+        backdrop-filter: blur(12px);
+      }
+      .entete__interieur {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--e-6);
+        padding-block: 12px;
+      }
+      .entete__marque img {
+        width: 52px;
+        height: 52px;
+        object-fit: contain;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: var(--e-9);
+      }
+      .nav__liste {
+        display: flex;
+        align-items: center;
+        gap: var(--e-7);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .nav__lien {
+        font: 700 var(--t-etiquette) / 1 var(--f-mono);
+        letter-spacing: var(--ls-etiquette);
+        text-transform: uppercase;
+        color: var(--c-texte-2);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: color var(--duree-rapide) var(--courbe);
+      }
+      .nav__lien:hover,
+      .nav__lien[aria-current='page'] {
+        color: var(--c-accent-texte);
+      }
+      .pastille {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        animation: clignoter 2s infinite;
+      }
+      @keyframes clignoter {
+        50% {
+          opacity: 0.2;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pastille {
+          animation: none;
+        }
+      }
+
+      .burger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: none;
+        border: 1px solid var(--c-bordure);
+        border-radius: var(--r-md);
+        padding: 11px 10px;
+        cursor: pointer;
+      }
+      .burger span {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background: var(--c-titre);
+        border-radius: 2px;
+        transition: transform var(--duree) var(--courbe), opacity var(--duree) var(--courbe);
+      }
+      .burger[aria-expanded='true'] span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+      }
+      .burger[aria-expanded='true'] span:nth-child(2) {
+        opacity: 0;
+      }
+      .burger[aria-expanded='true'] span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+      }
+
+      /* Sous 900 px la navigation devient un panneau déroulant. */
+      @media (max-width: 900px) {
+        .burger {
+          display: flex;
+        }
+        .nav {
+          position: fixed;
+          inset: 0 0 0 auto;
+          width: min(320px, 86vw);
+          flex-direction: column;
+          align-items: stretch;
+          justify-content: flex-start;
+          gap: var(--e-6);
+          padding: 90px var(--e-8) var(--e-8);
+          background: var(--c-surface);
+          border-left: 1px solid var(--c-bordure);
+          box-shadow: var(--o-carte-survol);
+          transform: translateX(100%);
+          transition: transform var(--duree-lente) var(--courbe);
+          overflow-y: auto;
+        }
+        .nav--ouverte {
+          transform: none;
+        }
+        .nav__liste {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0;
+        }
+        .nav__liste li + li {
+          border-top: 1px solid var(--c-bordure-douce);
+        }
+        .nav__lien {
+          display: block;
+          padding: 16px 0;
+          font-size: 12px;
+        }
+        .nav__cta {
+          justify-content: center;
+        }
+      }
+
+      /* ---------- Pied de page ---------- */
+      .pied {
+        background: var(--c-fond-encre);
+        color: #fff;
+        margin-top: var(--e-section-large);
+      }
+      .pied__interieur {
+        padding-block: var(--e-section);
+      }
+      .pied__marque {
+        display: flex;
+        align-items: center;
+        gap: var(--e-5);
+        padding-bottom: var(--e-9);
+        border-bottom: 1px solid rgb(255 255 255 / 0.12);
+      }
+      .pied__nom {
+        font: 400 var(--t-n6) / 1.1 var(--f-titre);
+        text-transform: uppercase;
+      }
+      .pied__mention {
+        font-size: var(--t-xs);
+        color: var(--brut-gris-08);
+        margin-top: 4px;
+      }
+      .pied__colonnes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: var(--e-11);
+        padding-block: var(--e-11);
+      }
+      .pied__liste {
+        list-style: none;
+        margin: var(--e-5) 0 0;
+        padding: 0;
+        display: grid;
+        gap: var(--e-3);
+        font-size: var(--t-xs);
+        color: var(--brut-gris-05);
+      }
+      .pied__liste a,
+      .pied__reseaux a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .pied__liste a:hover,
+      .pied__reseaux a:hover {
+        color: var(--brut-orange);
+      }
+      .pied__reseaux {
+        list-style: none;
+        display: flex;
+        gap: var(--e-5);
+        margin: var(--e-6) 0 0;
+        padding: 0;
+        font: 700 var(--t-etiquette) var(--f-mono);
+        letter-spacing: var(--ls-etiquette);
+        text-transform: uppercase;
+        color: var(--brut-gris-05);
+      }
+      .pied__bas {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--e-6);
+        flex-wrap: wrap;
+        padding-top: var(--e-8);
+        border-top: 1px solid rgb(255 255 255 / 0.12);
+      }
+      .pied__bas .mention {
+        color: var(--brut-gris-08);
+      }
+      .pied__bas a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .pied__bas a:hover {
+        color: var(--brut-orange);
+      }
+    </style>
+  </body>
+</html>

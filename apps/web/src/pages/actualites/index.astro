@@ -1,0 +1,50 @@
+---
+import CarteActu from '../../components/CarteActu.astro';
+import EntetePage from '../../components/EntetePage.astro';
+import Base from '../../layouts/Base.astro';
+import { REQ_ACTUALITES, REQ_ACTUS_PAGE } from '../../lib/requetes';
+import { interroger } from '../../lib/sanity';
+import type { Actualite, EntetePage as Entete } from '../../lib/types';
+
+type Newsletter = { titre?: string; texte?: string; libelleBouton?: string; actif?: boolean };
+const page = await interroger<Entete & { blocNewsletter?: Newsletter }>(REQ_ACTUS_PAGE);
+const actualites = await interroger<Actualite[]>(REQ_ACTUALITES);
+
+const une = actualites.find((a) => a.aLaUne) ?? actualites[0];
+const autres = actualites.filter((a) => a._id !== une?._id);
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Actualités'} description={page?.seo?.description ?? page?.intro} page="actualites">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Actualités'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu">
+      {actualites.length === 0 ? (
+        <p class="mention">Aucune actualité publiée pour le moment.</p>
+      ) : (
+        <>
+          {une && <CarteActu actualite={une} grande />}
+          {autres.length > 0 && (
+            <div class="grille grille--auto" style="margin-top:var(--e-11)">
+              {autres.map((a) => <CarteActu actualite={a} />)}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  </section>
+
+  {page?.blocNewsletter?.actif && page.blocNewsletter.titre && (
+    <section class="section">
+      <div class="contenu carte bloc-lettre">
+        <h2 class="titre-2">{page.blocNewsletter.titre}</h2>
+        <p class="chapo">{page.blocNewsletter.texte}</p>
+        <p class="mention">service d'emailing à brancher</p>
+      </div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .bloc-lettre { padding: var(--e-11); display: grid; gap: var(--e-5); }
+</style>

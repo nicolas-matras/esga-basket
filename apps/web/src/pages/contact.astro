@@ -1,0 +1,136 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_CONTACT_PAGE, REQ_PARAMETRES } from '../lib/requetes';
+import { interroger } from '../lib/sanity';
+import type { EntetePage as Entete } from '../lib/types';
+
+const page = await interroger<Entete & { titreFormulaire?: string; motifs?: string[] }>(REQ_CONTACT_PAGE);
+const parametres = await interroger<{
+  salle?: string; adresse?: string; email?: string; telephone?: string;
+  numeroFFBB?: string; lienPlan?: string;
+  reseaux?: { plateforme: string; libelle: string; url: string }[];
+}>(REQ_PARAMETRES);
+
+// Le formulaire n'est pas encore branché sur un service d'envoi.
+// Tant que c'est le cas, on assume : on l'affiche et on renvoie vers l'email.
+const formulaireBranche = false;
+const motifs = page?.motifs ?? ['Inscription', 'Bénévolat / arbitrage', 'Partenariat', 'Autre'];
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Contact'} description={page?.seo?.description ?? page?.intro} page="contact">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Contact'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu coordonnees">
+      <div>
+        <h2 class="surtitre">Adresse</h2>
+        <p>{parametres?.salle}<br />{parametres?.adresse}</p>
+        {parametres?.lienPlan && (
+          <a href={parametres.lienPlan} target="_blank" rel="noopener noreferrer" class="lien">Itinéraire →</a>
+        )}
+      </div>
+      <div>
+        <h2 class="surtitre">Contact</h2>
+        <p>
+          {parametres?.email && <a class="lien" href={`mailto:${parametres.email}`}>{parametres.email}</a>}<br />
+          {parametres?.telephone && <a class="lien" href={`tel:${parametres.telephone.replace(/\s/g, '')}`}>{parametres.telephone}</a>}<br />
+          <span class="mention">Club FFBB {parametres?.numeroFFBB}</span>
+        </p>
+      </div>
+      <div>
+        <h2 class="surtitre">Réseaux</h2>
+        <p>
+          {(parametres?.reseaux ?? []).map((r) => (
+            <><a class="lien" href={r.url} target="_blank" rel="noopener noreferrer">{r.libelle}</a><br /></>
+          ))}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--douce">
+    <div class="contenu">
+      <h2 class="titre-2">{page?.titreFormulaire ?? 'Écrire au club'}</h2>
+
+      <form class="formulaire" method="post" data-branche={String(formulaireBranche)}>
+        <label>
+          <span>Nom et prénom</span>
+          <input type="text" name="nom" required autocomplete="name" placeholder="Nom et prénom" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="email" placeholder="ton@email.fr" />
+        </label>
+        <label>
+          <span>Motif</span>
+          <select name="motif">
+            {motifs.map((m) => <option value={m}>{m}</option>)}
+          </select>
+        </label>
+        <label class="pleine-largeur">
+          <span>Message</span>
+          <textarea name="message" rows="5" required placeholder="Ton message"></textarea>
+        </label>
+
+        <div class="formulaire__pied pleine-largeur">
+          <button type="submit" class="bouton bouton--principal">Envoyer →</button>
+          <p class="mention" id="etat-formulaire">
+            envoi non branché — utilise l'email ci-dessus en attendant
+          </p>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script>
+    // Tant qu'aucun service d'envoi n'est configuré, on bascule vers un mailto
+    // pré-rempli plutôt que d'afficher un formulaire qui ne part nulle part.
+    const form = document.querySelector<HTMLFormElement>('.formulaire');
+    const etat = document.getElementById('etat-formulaire');
+    if (form && form.dataset.branche === 'false') {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const d = new FormData(form);
+        const sujet = `[Site ESGA] ${d.get('motif')}`;
+        const corps = `${d.get('message')}\n\n— ${d.get('nom')} (${d.get('email')})`;
+        const dest = document.querySelector<HTMLAnchorElement>('a[href^="mailto:"]')?.href ?? '';
+        const adresse = dest.replace('mailto:', '').split('?')[0];
+        window.location.href =
+          `mailto:${adresse}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+        if (etat) etat.textContent = 'ton logiciel de messagerie vient de s’ouvrir';
+      });
+    }
+  </script>
+</Base>
+
+<style>
+  .coordonnees {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--e-11);
+  }
+  .coordonnees p { margin: var(--e-5) 0 0; font: 500 var(--t-xs) / 1.9 var(--f-texte); color: var(--c-texte); }
+  .lien { color: var(--c-lien); text-decoration: none; }
+  .lien:hover { color: var(--c-accent-texte); }
+
+  .formulaire {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--e-6); margin-top: var(--e-9); max-width: 760px;
+  }
+  .pleine-largeur { grid-column: 1 / -1; }
+  .formulaire label { display: grid; gap: var(--e-2); }
+  .formulaire label > span {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono); letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase; color: var(--c-texte-2);
+  }
+  .formulaire input, .formulaire select, .formulaire textarea {
+    border: 1px solid var(--c-bordure-forte); border-radius: var(--r-md);
+    padding: 14px 16px; font: 500 var(--t-xs) var(--f-texte); color: var(--c-titre);
+    background: var(--c-surface); outline: none;
+    transition: border-color var(--duree-rapide) var(--courbe);
+  }
+  .formulaire input:focus, .formulaire select:focus, .formulaire textarea:focus {
+    border-color: var(--c-accent);
+  }
+  .formulaire textarea { resize: vertical; }
+  .formulaire__pied { display: flex; align-items: center; gap: var(--e-6); flex-wrap: wrap; }
+</style>

@@ -1,0 +1,106 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_CATEGORIES, REQ_EQUIPES, REQ_EQUIPES_PAGE } from '../lib/requetes';
+import { interroger, urlImage } from '../lib/sanity';
+import type { Categorie, Equipe, EntetePage as Entete } from '../lib/types';
+
+const page = await interroger<Entete & { mentionAttente?: string }>(REQ_EQUIPES_PAGE);
+const categories = await interroger<Categorie[]>(REQ_CATEGORIES);
+const equipes = await interroger<Equipe[]>(REQ_EQUIPES);
+
+// On ne propose que les catégories qui ont au moins une équipe.
+const utilisees = categories.filter((c) => equipes.some((e) => e.categorie?._id === c._id));
+const creneauTexte = (e: Equipe) =>
+  (e.creneaux ?? [])
+    .map((c) => [c.jour, c.debut, c.fin ? `– ${c.fin}` : null].filter(Boolean).join(' '))
+    .join(' · ');
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Équipes'} description={page?.seo?.description ?? page?.intro} page="equipes">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Équipes'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu">
+      {utilisees.length > 0 && (
+        <div class="filtres" role="group" aria-label="Filtrer par catégorie">
+          <button class="filtre filtre--actif" type="button" data-cat="toutes">Toutes</button>
+          {utilisees.map((c) => (
+            <button class="filtre" type="button" data-cat={c._id}>{c.libelle}</button>
+          ))}
+        </div>
+      )}
+
+      {equipes.length === 0 ? (
+        <p class="mention">Aucune équipe saisie pour le moment.</p>
+      ) : (
+        <div class="grille grille--auto" id="liste-equipes" style="margin-top:var(--e-9)">
+          {equipes.map((e) => {
+            const photo = urlImage(e.photo, 600, 340);
+            return (
+              <article class="carte equipe" data-cat={e.categorie?._id}>
+                <div class="equipe__media">
+                  {photo ? (
+                    <img src={photo} alt={e.photo?.alt ?? ''} loading="lazy" />
+                  ) : (
+                    <span class="mention">photo d'équipe 600×340</span>
+                  )}
+                </div>
+                <div class="equipe__corps">
+                  <div class="equipe__titre">
+                    <h2 class="titre-3">{e.nom}</h2>
+                    {e.championnat && <span class="equipe__champ">{e.championnat}</span>}
+                  </div>
+                  <p class="equipe__creneaux">{creneauTexte(e) || 'créneaux à confirmer'}</p>
+                  <p class="surtitre">Coach · {e.coach ?? 'à confirmer'}</p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {page?.mentionAttente && <p class="mention" style="margin-top:var(--e-8)">{page.mentionAttente}</p>}
+    </div>
+  </section>
+
+  <script>
+    // Filtre côté client : la liste est déjà rendue, on masque simplement.
+    const boutons = document.querySelectorAll<HTMLButtonElement>('.filtre');
+    const cartes = document.querySelectorAll<HTMLElement>('.equipe');
+    boutons.forEach((b) =>
+      b.addEventListener('click', () => {
+        boutons.forEach((x) => x.classList.toggle('filtre--actif', x === b));
+        const cible = b.dataset.cat;
+        cartes.forEach((c) => {
+          c.hidden = cible !== 'toutes' && c.dataset.cat !== cible;
+        });
+      }),
+    );
+  </script>
+</Base>
+
+<style>
+  .filtres { display: flex; gap: var(--e-3); flex-wrap: wrap; }
+  .filtre {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono); letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase; padding: 9px 15px; border-radius: var(--r-pilule);
+    border: 1px solid var(--c-bordure); background: transparent; color: var(--c-texte-2);
+    cursor: pointer; transition: all var(--duree-rapide) var(--courbe);
+  }
+  .filtre:hover { border-color: var(--c-accent); color: var(--c-accent-texte); }
+  .filtre--actif { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
+  .equipe { overflow: hidden; }
+  .equipe__media {
+    aspect-ratio: 60 / 34; background: var(--c-fond-doux); display: grid; place-items: center;
+    border-bottom: 1px solid var(--c-bordure-douce);
+  }
+  .equipe__media img { width: 100%; height: 100%; object-fit: cover; }
+  .equipe__corps { padding: var(--e-7); display: grid; gap: var(--e-3); }
+  .equipe__titre { display: flex; align-items: baseline; gap: var(--e-4); flex-wrap: wrap; }
+  .equipe__champ {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono); letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase; color: var(--c-accent-texte);
+  }
+  .equipe__creneaux { margin: 0; font: 500 var(--t-xs) / 1.6 var(--f-texte); color: var(--c-texte-2); }
+</style>

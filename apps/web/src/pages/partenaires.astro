@@ -1,0 +1,100 @@
+---
+import EntetePage from '../components/EntetePage.astro';
+import Base from '../layouts/Base.astro';
+import { REQ_PACKS, REQ_PARAMETRES, REQ_PARTENAIRES, REQ_PARTENAIRES_PAGE } from '../lib/requetes';
+import { interroger, urlImage, type SourceImage } from '../lib/sanity';
+import { euros } from '../lib/format';
+import type { EntetePage as Entete } from '../lib/types';
+
+type Pack = {
+  _id: string; nom?: string; avantages?: string[]; montant?: number | null;
+  mentionFiscale?: string; misEnAvant?: boolean;
+};
+type Partenaire = { _id: string; nom?: string; url?: string; logo?: SourceImage };
+
+const page = await interroger<Entete & { titrePartenaires?: string }>(REQ_PARTENAIRES_PAGE);
+const packs = await interroger<Pack[]>(REQ_PACKS);
+const partenaires = await interroger<Partenaire[]>(REQ_PARTENAIRES);
+const parametres = await interroger<{ email?: string }>(REQ_PARAMETRES);
+---
+
+<Base titre={page?.seo?.titre ?? page?.titre ?? 'Partenaires'} description={page?.seo?.description ?? page?.intro} page="partenaires">
+  <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Partenaires'} intro={page?.intro} />
+
+  <section class="section">
+    <div class="contenu grille grille--large">
+      {packs.map((p) => (
+        <article class:list={['carte pack', p.misEnAvant && 'pack--avant']}>
+          {p.misEnAvant && <span class="pack__ruban">Le plus choisi</span>}
+          <p class="surtitre">Pack</p>
+          <h2 class="titre-2">{p.nom}</h2>
+          <ul class="pack__liste">
+            {(p.avantages ?? []).map((a) => <li>{a}</li>)}
+          </ul>
+          {p.mentionFiscale && <p class="mention">{p.mentionFiscale}</p>}
+          <p class:list={['pack__montant chiffres', p.montant == null && 'pack__montant--vide']}>
+            {euros(p.montant, 'montant à définir')}
+          </p>
+          <a href={`mailto:${parametres?.email ?? ''}?subject=${encodeURIComponent('Partenariat ' + (p.nom ?? ''))}`} class="bouton bouton--principal">
+            Nous contacter →
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="section section--douce">
+    <div class="contenu">
+      <h2 class="titre-2">{page?.titrePartenaires ?? 'Ils nous soutiennent'}</h2>
+      {partenaires.length === 0 ? (
+        <div class="logos" style="margin-top:var(--e-9)">
+          {Array.from({ length: 6 }).map(() => (
+            <span class="logo logo--vide mention">logo 240×120</span>
+          ))}
+        </div>
+      ) : (
+        <div class="logos" style="margin-top:var(--e-9)">
+          {partenaires.map((p) => {
+            const logo = urlImage(p.logo, 240, 120);
+            const contenu = logo
+              ? <img src={logo} alt={p.nom ?? ''} loading="lazy" />
+              : <span class="mention">{p.nom}</span>;
+            return p.url ? (
+              <a class="logo" href={p.url} target="_blank" rel="noopener noreferrer">{contenu}</a>
+            ) : (
+              <span class="logo">{contenu}</span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pack { padding: var(--e-11); display: grid; gap: var(--e-5); align-content: start; position: relative; }
+  .pack--avant { border-color: var(--c-accent); }
+  .pack__ruban {
+    position: absolute; top: -11px; left: var(--e-11);
+    background: var(--c-accent); color: #fff; padding: 5px 12px; border-radius: var(--r-pilule);
+    font: 700 var(--t-etiquette) / 1 var(--f-mono); letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+  }
+  .pack__liste {
+    list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-3);
+    font: 500 var(--t-xs) / 1.6 var(--f-texte); color: var(--c-texte-2);
+  }
+  .pack__liste li { padding-left: var(--e-6); position: relative; }
+  .pack__liste li::before { content: '→'; position: absolute; left: 0; color: var(--c-accent); }
+  .pack__montant { margin: 0; font: 400 var(--t-n4) / 1 var(--f-titre); color: var(--c-titre); text-transform: uppercase; }
+  .pack__montant--vide { font-family: var(--f-mono); font-size: var(--t-mono-corps); color: var(--c-texte-3); }
+  .pack .bouton { justify-self: start; }
+
+  .logos { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--e-6); }
+  .logo {
+    display: grid; place-items: center; aspect-ratio: 2 / 1; background: var(--c-surface);
+    border: 1px solid var(--c-bordure); border-radius: var(--r-lg); padding: var(--e-5);
+  }
+  .logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .logo--vide { border-style: dashed; }
+</style>
