@@ -239,48 +239,14 @@
    sections foncées (#06091A, #0C1B4A) comme fonds, et remonte les neutres
    froids en textes. L'orange est conservé tel quel : 6.46:1 sur l'encre. */
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='clair']) {
-    --c-fond: var(--brut-encre);
-    --c-fond-doux: var(--brut-navy-05);
-    --c-fond-inverse: var(--brut-blanc);
-    --c-fond-encre: #000000;
-    --c-surface: var(--brut-navy-04);
-    --c-surface-haute: var(--brut-navy-03);
-    --c-rail: rgb(255 255 255 / 0.12);
+/*
+  Le thème sombre ne se déclenche PLUS automatiquement sur `prefers-color-scheme`.
 
-    --c-titre: var(--brut-blanc);
-    --c-texte: var(--brut-gris-05);
-    --c-texte-2: var(--brut-gris-08);
-    --c-texte-3: var(--brut-gris-09);
-    --c-texte-sur-inverse: var(--brut-navy);
-    --c-texte-2-sur-inverse: var(--brut-gris-11);
-    --c-texte-3-sur-inverse: var(--brut-gris-10);
-
-    /* Sur l'encre, le bleu du logo tombe à 1.4:1 : on l'éclaircit franchement. */
-    --c-cta: #3f5ec9;
-    --c-cta-survol: #5a76dd;
-    --c-cta-texte: var(--brut-blanc);
-    --c-accent: #8fa8ff;
-    --c-accent-texte: #8fa8ff;
-    --c-accent-sur-inverse: var(--brut-bleu-genas);
-    --c-sport: var(--brut-orange);
-    --c-sport-texte: var(--brut-orange);
-    --c-lien: #8fa8ff;
-    --c-lien-survol: #b3c4ff;
-
-    --c-bordure: rgb(255 255 255 / 0.12);
-    --c-bordure-forte: rgb(255 255 255 / 0.24);
-    --c-bordure-douce: rgb(255 255 255 / 0.06);
-
-    --c-victoire: var(--brut-victoire);
-    --c-defaite: var(--brut-defaite);
-
-    --o-carte: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 40px rgb(0 0 0 / 0.55);
-    --o-carte-survol: 0 2px 4px rgb(0 0 0 / 0.45), 0 26px 60px rgb(0 0 0 / 0.65);
-    --o-accent: 0 2px 6px rgb(242 106 36 / 0.25), 0 14px 34px rgb(242 106 36 / 0.3);
-  }
-}
+  La maquette est claire, et c'est la direction artistique retenue : un visiteur
+  dont le système est en mode sombre voyait un site entièrement bleu nuit, très
+  loin de ce qui a été validé. Le sombre reste disponible via `data-theme`, mais
+  il ne s'impose plus.
+*/
 
 /* Surcharge explicite, indépendante de la préférence système */
 :root[data-theme='sombre'] {

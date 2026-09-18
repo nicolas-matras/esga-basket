@@ -15,6 +15,8 @@ export type Match = {
   afficheDeLaSemaine?: boolean;
   note?: string;
   logoAdversaire?: SourceImage;
+  /** URL du logo servie par la FFBB, posée par la synchro. */
+  logoAdversaireUrl?: string;
   equipe?: { _id?: string; nom?: string; championnat?: string };
   competition?: { libelle?: string };
 };

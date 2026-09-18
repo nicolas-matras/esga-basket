@@ -117,6 +117,11 @@ export async function synchroniser(
 
   const mutations: Mutation[] = [];
   const maintenant = new Date().toISOString();
+  /*
+    Les logos des adversaires, récupérés en une fois à la fin plutôt qu'un par
+    rencontre. On mémorise d'abord les identifiants rencontrés.
+  */
+  const adversaires = new Set<string>();
 
   // --- 3. Un passage par engagement -----------------------------------------
   for (const engagement of engagements) {
@@ -266,6 +271,7 @@ export async function synchroniser(
 
     // --- 3c. Les rencontres -------------------------------------------------
     for (const match of nosMatchs) {
+      if (match.idAdversaire) adversaires.add(match.idAdversaire);
       const marque = empreinte({ ...match, equipe: idEquipe });
       if (precedent.empreintes.get(match._id) === marque) continue;
 
@@ -289,6 +295,31 @@ export async function synchroniser(
       rapport.rencontresMisesAJour += 1;
     }
 
+  }
+
+  // --- 3e. Les logos des adversaires, en une poignée d'appels ---------------
+  if (adversaires.size > 0) {
+    try {
+      const logos = await ffbb.logos([...adversaires]);
+      noter(`${logos.size} logos d'adversaires récupérés sur ${adversaires.size} clubs.`);
+      for (const m of mutations) {
+        if (!('patch' in m) || !m.patch.set) continue;
+        const id = (m.patch.set as { idAdversaire?: string }).idAdversaire;
+        const url = id ? logos.get(id) : undefined;
+        if (url) (m.patch.set as Record<string, unknown>).logoAdversaireUrl = url;
+      }
+      for (const m of mutations) {
+        if (!('createIfNotExists' in m)) continue;
+        const doc = m.createIfNotExists as { idAdversaire?: string };
+        const url = doc.idAdversaire ? logos.get(doc.idAdversaire) : undefined;
+        if (url) (m.createIfNotExists as Record<string, unknown>).logoAdversaireUrl = url;
+      }
+    } catch (cause) {
+      // Un logo manquant n'est pas une raison de perdre une synchro entière.
+      const message = `logos indisponibles : ${(cause as Error).message}`;
+      erreurs.push(message);
+      noter(`  ⚠ ${message}`);
+    }
   }
 
   // --- 4. Écriture, en une transaction --------------------------------------

@@ -142,6 +142,9 @@ export type MatchSanity = {
   scoreEsga?: number;
   scoreAdverse?: number;
   ffbbPouleId?: string;
+  /** Identifiant FFBB de l'adversaire, pour retrouver son logo. */
+  idAdversaire?: string;
+  logoAdversaireUrl?: string;
   syncSource: 'ffbb';
 };
 
@@ -213,6 +216,7 @@ export function versMatch(
     statut: joue ? 'termine' : 'a-venir',
     ...(joue ? { scoreEsga: scoreNous, scoreAdverse: scoreEux } : {}),
     ffbbPouleId: contexte.idPoule,
+    idAdversaire: String((domicile ? r.idOrganismeEquipe2 : r.idOrganismeEquipe1) ?? '') || undefined,
     syncSource: 'ffbb',
   };
 }

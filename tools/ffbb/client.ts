@@ -172,6 +172,28 @@ export class ClientFfbb {
     });
   }
 
+  /**
+   * Les logos de plusieurs clubs en un seul appel.
+   *
+   * Un appel par adversaire ferait exploser la cadence : 140 rencontres, c'est
+   * plus de cent clubs distincts. On interroge par lots.
+   */
+  async logos(idsOrganismes: string[]): Promise<Map<string, string>> {
+    const logos = new Map<string, string>();
+    const uniques = [...new Set(idsOrganismes.filter(Boolean))];
+    for (let i = 0; i < uniques.length; i += 60) {
+      const lot = uniques.slice(i, i + 60);
+      const organismes = await this.items<{ id: string; logo?: string | null }[]>(
+        '/items/ffbbserver_organismes',
+        { 'filter[id][_in]': lot.join(','), fields: 'id,logo', limit: String(lot.length) },
+      );
+      for (const o of organismes) {
+        if (o.logo) logos.set(String(o.id), `https://api.ffbb.com/assets/${o.logo}?width=160`);
+      }
+    }
+    return logos;
+  }
+
   /** La saison active, pour détecter le changement de saison en juillet. */
   async saison(): Promise<SaisonFfbb | null> {
     const saisons = await this.items<SaisonFfbb[]>('/items/ffbbserver_saisons', {

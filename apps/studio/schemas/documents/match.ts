@@ -46,6 +46,14 @@ export const match = defineType({
       validation: (r) => r.required(),
     }),
     defineField({
+      name: 'logoAdversaireUrl',
+      title: 'Logo de l’adversaire (FFBB)',
+      type: 'url',
+      group: 'quand',
+      description: 'Récupéré automatiquement depuis la FFBB. Pour un autre logo, utilisez le champ image ci-dessous.',
+      readOnly: estSynchronise,
+    }),
+    defineField({
       name: 'logoAdversaire',
       title: 'Logo de l’adversaire',
       type: 'image',
