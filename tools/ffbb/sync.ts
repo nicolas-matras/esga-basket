@@ -396,18 +396,6 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
        _id, _type, syncEmpreinte, ffbbPouleId, ffbbEngagementId, "nbLignes": count(lignes)
      }`,
   );
-  const classements = new Map<string, number>();
-  const empreintes = new Map<string, string>();
-  const equipesParEngagement = new Map<string, string>();
-  for (const d of documents) {
-    if (d.syncEmpreinte) empreintes.set(d._id, d.syncEmpreinte);
-    if (d._type === 'classement' && d.ffbbPouleId && typeof d.nbLignes === 'number') {
-      classements.set(d.ffbbPouleId, d.nbLignes);
-    }
-    if (d._type === 'equipe' && d.ffbbEngagementId) {
-      equipesParEngagement.set(d.ffbbEngagementId, d._id);
-    }
-  }
   /*
     On écarte les documents dont l'identifiant contient un point.
 
@@ -422,6 +410,18 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
   const pointilles = documents.filter((d) => d._id.includes('.'));
   documents = documents.filter((d) => !d._id.includes('.'));
 
+  const classements = new Map<string, number>();
+  const empreintes = new Map<string, string>();
+  const equipesParEngagement = new Map<string, string>();
+  for (const d of documents) {
+    if (d.syncEmpreinte) empreintes.set(d._id, d.syncEmpreinte);
+    if (d._type === 'classement' && d.ffbbPouleId && typeof d.nbLignes === 'number') {
+      classements.set(d.ffbbPouleId, d.nbLignes);
+    }
+    if (d._type === 'equipe' && d.ffbbEngagementId) {
+      equipesParEngagement.set(d.ffbbEngagementId, d._id);
+    }
+  }
   const parType = new Map<string, number>();
   for (const d of documents) parType.set(d._type, (parType.get(d._type) ?? 0) + 1);
   const typesLus = [...parType].map(([k, n]) => `${k}:${n}`).join(' ');
