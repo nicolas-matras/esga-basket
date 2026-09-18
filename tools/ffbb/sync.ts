@@ -159,19 +159,37 @@ export async function synchroniser(
       ffbbCompetitionCode: equipe.ffbbCompetitionCode,
     };
     const marqueEquipe = empreinte(donneesEquipe);
-    // La création est inconditionnelle : une équipe dont l'empreinte n'a pas
-    // bougé mais qui n'existe pas encore doit quand même être créée.
-    mutations.push({
-      createIfNotExists: {
-        _id: idEquipe,
-        _type: 'equipe',
-        nom: equipe.nomPropose,
-        slug: { _type: 'slug', current: idEquipe },
-        visibleSurSite: true,
-        ordre: 999,
-      },
-    });
-    if (precedent.empreintes.get(idEquipe) !== marqueEquipe) {
+    /*
+      Deux écritures distinctes selon que l'équipe existe déjà ou non.
+
+      Une équipe connue est PATCHÉE : seuls les champs venus de la FFBB
+      bougent, le nom choisi par le club, sa photo, son coach et sa visibilité
+      restent intacts.
+
+      Une équipe inconnue est créée d'un bloc. `createIfNotExists` suivi d'un
+      `patch` ne fonctionnait pas ici — la transaction répondait 200 sans créer
+      le document, et les rencontres se retrouvaient avec une référence morte.
+    */
+    const connue = precedent.equipesParEngagement.has(engagement.id);
+
+    if (!connue) {
+      mutations.push({
+        createOrReplace: {
+          _id: idEquipe,
+          _type: 'equipe',
+          nom: equipe.nomPropose,
+          slug: { _type: 'slug', current: idEquipe },
+          visibleSurSite: true,
+          ordre: 999,
+          ...donneesEquipe,
+          syncSource: 'ffbb',
+          derniereSync: maintenant,
+          syncStatut: 'ok',
+          syncEmpreinte: marqueEquipe,
+        },
+      });
+      rapport.equipesMisesAJour += 1;
+    } else if (precedent.empreintes.get(idEquipe) !== marqueEquipe) {
       mutations.push({
         patch: {
           id: idEquipe,
