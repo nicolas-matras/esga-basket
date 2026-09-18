@@ -36,6 +36,7 @@ function lireEnv(): Record<string, string> {
 
 const env = lireEnv();
 const simulation = process.argv.includes('--dry-run');
+const forcer = process.argv.includes('--forcer');
 const horodater = () => new Date().toLocaleTimeString('fr-FR');
 const journal = (m: string) => console.log(`[${horodater()}] ${m}`);
 
@@ -65,7 +66,7 @@ journal(
 
 let rapport: Rapport;
 try {
-  rapport = await synchroniser(ffbb, sanity, { codeClub, simulation, journal });
+  rapport = await synchroniser(ffbb, sanity, { codeClub, simulation, forcer, journal });
 } catch (cause) {
   const message = (cause as Error).message;
   journal(`ÉCHEC : ${message}`);

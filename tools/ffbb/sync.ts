@@ -29,6 +29,8 @@ import {
 export type Options = {
   codeClub: string;
   simulation: boolean;
+  /** Ignore les empreintes et réécrit tout. Sert à réparer un état incohérent. */
+  forcer?: boolean;
   journal: (message: string) => void;
 };
 
@@ -80,6 +82,15 @@ export async function synchroniser(
 
   // --- 1. Ce que nous avons déjà, pour pouvoir détecter une régression -------
   const precedent = await lireEtatPrecedent(sanity);
+  if (options.forcer) {
+    noter('Mode forcé : les empreintes sont ignorées, tout est réécrit.');
+    precedent.empreintes.clear();
+  }
+  noter(
+    `État précédent : ${precedent.empreintes.size} empreintes, ` +
+      `${precedent.equipesParEngagement.size} équipes rattachées, ` +
+      `${precedent.classements.size} classements connus.`,
+  );
 
   // --- 2. Découverte, en partant du seul code club --------------------------
   await ffbb.authentifier();
@@ -140,6 +151,8 @@ export async function synchroniser(
       erreurs.push(message);
       noter(`  ⚠ ${message}`);
     }
+
+    noter(`  ${etiquette} : ${nosMatchs.length} rencontres, ${(poule.classements ?? []).length} lignes de classement.`);
 
     // --- 3b. Le classement --------------------------------------------------
     const lignesBrutes = poule.classements ?? [];

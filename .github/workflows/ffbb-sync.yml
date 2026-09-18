@@ -22,6 +22,10 @@ on:
         description: 'Simulation (n’écrit rien dans Sanity)'
         type: boolean
         default: false
+      forcer:
+        description: 'Forcer la réécriture complète (ignore les empreintes)'
+        type: boolean
+        default: false
 
 concurrency:
   # Deux synchros en parallèle écriraient les mêmes documents.
@@ -50,8 +54,7 @@ jobs:
           NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
           FFBB_CODE_CLUB: ARA0069090
         run: |
-          if [ "${{ inputs.simulation }}" = "true" ]; then
-            node tools/ffbb/index.ts --dry-run
-          else
-            node tools/ffbb/index.ts
-          fi
+          ARGS=""
+          [ "${{ inputs.simulation }}" = "true" ] && ARGS="$ARGS --dry-run"
+          [ "${{ inputs.forcer }}" = "true" ] && ARGS="$ARGS --forcer"
+          node tools/ffbb/index.ts $ARGS
