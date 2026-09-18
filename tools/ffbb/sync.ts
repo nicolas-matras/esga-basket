@@ -53,6 +53,9 @@ type EtatPrecedent = {
   empreintes: Map<string, string>; // _id → empreinte
   /** engagement FFBB → identifiant du document équipe, posé par la migration. */
   equipesParEngagement: Map<string, string>;
+  /** Diagnostic : ce que la requête d'état a réellement ramené. */
+  documentsLus: number;
+  typesLus: string;
 };
 
 export async function synchroniser(
@@ -87,9 +90,10 @@ export async function synchroniser(
     precedent.empreintes.clear();
   }
   noter(
-    `État précédent : ${precedent.empreintes.size} empreintes, ` +
-      `${precedent.equipesParEngagement.size} équipes rattachées, ` +
-      `${precedent.classements.size} classements connus.`,
+    `État précédent : ${precedent.documentsLus} documents lus, ` +
+      `${precedent.empreintes.size} empreintes, ` +
+      `${precedent.equipesParEngagement.size} équipes rattachées ` +
+      `(${precedent.typesLus}), ${precedent.classements.size} classements connus.`,
   );
 
   // --- 2. Découverte, en partant du seul code club --------------------------
@@ -374,5 +378,8 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
       equipesParEngagement.set(d.ffbbEngagementId, d._id);
     }
   }
-  return { classements, empreintes, equipesParEngagement };
+  const parType = new Map<string, number>();
+  for (const d of documents) parType.set(d._type, (parType.get(d._type) ?? 0) + 1);
+  const typesLus = [...parType].map(([k, n]) => `${k}:${n}`).join(' ');
+  return { classements, empreintes, equipesParEngagement, documentsLus: documents.length, typesLus };
 }
