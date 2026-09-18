@@ -79,6 +79,10 @@ export const equipes = [
   _type: 'equipe',
   slug: { _type: 'slug', current: e.nom.toLowerCase().replace(/\s+/g, '-') },
   categorie: { _type: 'reference', _ref: e.categorie },
+  genre: e.nom.includes('F') ? 'F' : 'M',
+  visibleSurSite: true,
+  // Saisie à la main tant que la synchronisation FFBB n'a pas pris la main.
+  syncSource: 'manuel',
 }));
 
 /**

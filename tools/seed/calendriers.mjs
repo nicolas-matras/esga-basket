@@ -10,7 +10,7 @@
  * Les mois de septembre à décembre sont en 2026, janvier à avril en 2027.
  */
 
-/** SM1 — DM1 Poule A2 */
+/** SM1 — PRM poule A2 */
 export const SM1 = [
   [1, '19/09', '20h30', true, 'AL Gerland Mouche Lyon - 2'],
   [2, '27/09', '10h30', false, "Cercle Sportif de l'Ozon - 3"],
@@ -112,6 +112,7 @@ export function versMatchs(lignes, { equipe, competition, prefixe, lieuDomicile 
       nature: 'championnat',
       statut: 'a-venir',
       dansLeBandeau: true,
+      syncSource: 'manuel',
       ...(note ? { note } : {}),
     };
   });

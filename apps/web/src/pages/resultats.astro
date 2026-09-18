@@ -38,7 +38,7 @@ const aAfficher = joues.slice(0, page?.nombreResultats ?? 6);
                 titre={c.competition?.libelle}
                 lignes={c.lignes ?? []}
                 misAJourLe={c.misAJourLe}
-                source={c.source}
+                source={c.syncSource}
               />
             </div>
           ))}

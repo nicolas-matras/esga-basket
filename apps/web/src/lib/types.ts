@@ -37,13 +37,20 @@ export type LigneClassement = {
   estESGA?: boolean;
   points?: number;
   joues?: number;
+  gagnes?: number;
+  perdus?: number;
+  pointsMarques?: number;
+  pointsEncaisses?: number;
   difference?: number;
+  horsClassement?: boolean;
+  forme?: string;
 };
 
 export type Classement = {
   _id?: string;
   misAJourLe?: string;
-  source?: string;
+  syncSource?: string;
+  derniereSync?: string;
   competition?: { _id?: string; libelle?: string; slug?: string; equipe?: { nom?: string } };
   lignes?: LigneClassement[];
 };
@@ -64,6 +71,9 @@ export type Equipe = {
   nom?: string;
   slug?: string;
   championnat?: string;
+  poule?: string;
+  genre?: string;
+  position?: number;
   coach?: string;
   creneaux?: { _key?: string; jour?: string; debut?: string; fin?: string; lieu?: string }[];
   photo?: SourceImage;

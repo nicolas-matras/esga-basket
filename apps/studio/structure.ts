@@ -2,6 +2,7 @@ import { AddUserIcon } from '@sanity/icons/AddUser';
 import { BarChartIcon } from '@sanity/icons/BarChart';
 import { BasketIcon } from '@sanity/icons/Basket';
 import { CalendarIcon } from '@sanity/icons/Calendar';
+import { ActivityIcon } from '@sanity/icons/Activity';
 import { ChartUpwardIcon } from '@sanity/icons/ChartUpward';
 import { CogIcon } from '@sanity/icons/Cog';
 import { DocumentTextIcon } from '@sanity/icons/DocumentText';
@@ -110,6 +111,7 @@ export const structure: StructureResolver = (S) =>
       S.divider(),
 
       unique(S, 'parametres', 'Réglages du club').icon(CogIcon),
+      unique(S, 'syncStatus', 'État de la synchronisation FFBB').icon(ActivityIcon),
     ]);
 
 /**

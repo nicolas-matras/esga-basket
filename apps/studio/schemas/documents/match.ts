@@ -1,5 +1,6 @@
 import { CalendarIcon } from '@sanity/icons/Calendar';
 import { defineField, defineType } from 'sanity';
+import { champsSync, estSynchronise, groupeSync } from '../sync';
 
 /**
  * Un match. C'est le document pivot du site : il alimente le bandeau de scores,
@@ -15,6 +16,7 @@ export const match = defineType({
     { name: 'quand', title: 'Quand et où', default: true },
     { name: 'score', title: 'Score' },
     { name: 'mise-en-avant', title: 'Mise en avant' },
+    groupeSync,
   ],
   fields: [
     defineField({
@@ -27,6 +29,7 @@ export const match = defineType({
     }),
     defineField({
       name: 'journee',
+      readOnly: estSynchronise,
       title: 'Journée',
       type: 'number',
       group: 'quand',
@@ -35,6 +38,7 @@ export const match = defineType({
     }),
     defineField({
       name: 'adversaire',
+      readOnly: estSynchronise,
       title: 'Adversaire',
       type: 'string',
       group: 'quand',
@@ -50,6 +54,7 @@ export const match = defineType({
     }),
     defineField({
       name: 'debut',
+      readOnly: estSynchronise,
       title: 'Date et heure',
       type: 'datetime',
       group: 'quand',
@@ -58,6 +63,7 @@ export const match = defineType({
     }),
     defineField({
       name: 'domicile',
+      readOnly: estSynchronise,
       title: 'Match à domicile',
       type: 'boolean',
       group: 'quand',
@@ -71,6 +77,22 @@ export const match = defineType({
       group: 'quand',
       initialValue: 'Gonzales',
       description: 'Le gymnase. « Gonzales » à domicile, le nom de la salle ou « Extérieur » en déplacement.',
+    }),
+    defineField({
+      name: 'salle',
+      title: 'Salle',
+      type: 'string',
+      group: 'quand',
+      description: 'Nom officiel du gymnase, repris de la FFBB.',
+      readOnly: estSynchronise,
+    }),
+    defineField({
+      name: 'lienFeuilleDeMatch',
+      title: 'Feuille de match',
+      type: 'url',
+      group: 'score',
+      description: 'Lien vers la feuille de match officielle, quand la FFBB la publie.',
+      readOnly: estSynchronise,
     }),
     defineField({
       name: 'competition',
@@ -162,6 +184,7 @@ export const match = defineType({
       initialValue: true,
       description: 'Le bandeau de scores en haut du site.',
     }),
+    ...champsSync(),
     defineField({
       name: 'note',
       title: 'Précision',

@@ -35,6 +35,7 @@ import {
   pageResultats,
 } from './singletons/pagesSimples';
 import { parametres } from './singletons/parametres';
+import { syncStatus } from './singletons/syncStatus';
 
 /** Les types dont il n'existe qu'un seul document : pas de bouton « créer ». */
 export const TYPES_UNIQUES = [
@@ -49,6 +50,7 @@ export const TYPES_UNIQUES = [
   'pagePartenaires',
   'pageBoutique',
   'pageContact',
+  'syncStatus',
 ] as const;
 
 export const schemaTypes: SchemaTypeDefinition[] = [
@@ -83,4 +85,5 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   pagePartenaires,
   pageBoutique,
   pageContact,
+  syncStatus,
 ];

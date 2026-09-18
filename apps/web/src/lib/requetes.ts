@@ -29,7 +29,7 @@ export const REQ_ACCUEIL = groq`*[_type == "pageAccueil"][0]{
   "classement": classementMisEnAvant->{
     libelle,
     "releve": *[_type == "classement" && competition._ref == ^._id] | order(misAJourLe desc)[0]{
-      misAJourLe, source, lignes[]{ _key, rang, equipe, estESGA, points, joues, difference }
+      misAJourLe, syncSource, lignes[]{ _key, rang, equipe, estESGA, points, joues, gagnes, perdus, pointsMarques, pointsEncaisses, difference, horsClassement, forme }
     }
   },
   blocBenevole, blocInscription{ titre, texte, libelleBouton, etapes[]{ _key, titre, texte } },
@@ -66,8 +66,9 @@ export const REQ_REGROUPEMENTS = groq`*[_type == "categorie" && defined(regroupe
   _id, regroupement, accroche, detail
 }`;
 
-export const REQ_EQUIPES = groq`*[_type == "equipe"] | order(ordre asc){
-  _id, nom, "slug": slug.current, championnat, coach,
+/* Les équipes que le club a choisi de masquer ne sortent pas du CMS. */
+export const REQ_EQUIPES = groq`*[_type == "equipe" && visibleSurSite != false] | order(ordre asc){
+  _id, nom, "slug": slug.current, championnat, poule, genre, position, coach,
   creneaux[]{ _key, jour, debut, fin, lieu },
   photo ${IMAGE},
   categorie->{ _id, libelle, "slug": slug.current, ordre }
@@ -112,9 +113,10 @@ export const REQ_MATCHS_BANDEAU = groq`*[_type == "match" && dansLeBandeau == tr
   | order(debut asc)[0...8] ${MATCH}`;
 
 export const REQ_CLASSEMENTS = groq`*[_type == "classement"] | order(misAJourLe desc){
-  _id, misAJourLe, source,
+  _id, misAJourLe, syncSource, derniereSync,
   competition->{ _id, libelle, "slug": slug.current, ordre, equipe->{ nom } },
-  lignes[]{ _key, rang, equipe, estESGA, points, joues, difference }
+  lignes[]{ _key, rang, equipe, estESGA, points, joues, gagnes, perdus,
+            pointsMarques, pointsEncaisses, difference, horsClassement, forme }
 }`;
 
 export const REQ_ACTUALITES = groq`*[_type == "actualite"] | order(date desc){
