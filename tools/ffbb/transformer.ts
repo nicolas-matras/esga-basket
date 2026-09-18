@@ -268,3 +268,95 @@ export function versEquipe(engagement: EngagementFfbb, poule: PouleFfbb | null):
       `${code ?? 'Équipe'} ${engagement.numeroEquipe ?? ''}`.trim(),
   };
 }
+
+// --- Rapprochement avec les équipes déjà saisies ------------------------------
+
+/**
+ * Normalise un libellé de championnat pour le comparer.
+ * « DMU18-6 poule préligue F » et « DMU18-6 Poule Préligue F » doivent se
+ * rapprocher : on ignore la casse, les accents et les espaces multiples.
+ */
+export function normaliser(valeur: string | null | undefined): string {
+  return (valeur ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+export type EquipeExistante = {
+  _id: string;
+  nom?: string;
+  championnat?: string;
+  ffbbEngagementId?: string;
+};
+
+export type Rapprochement = {
+  engagementId: string;
+  code?: string;
+  championnat: string;
+  /** L'équipe déjà saisie à laquelle rattacher l'engagement, si trouvée. */
+  equipeId?: string;
+  equipeNom?: string;
+  motif: 'engagement' | 'championnat' | 'code' | 'aucun';
+};
+
+/**
+ * Rapproche un engagement FFBB d'une équipe déjà saisie à la main.
+ *
+ * Trois passes, de la plus sûre à la plus permissive :
+ *  1. l'identifiant d'engagement est déjà posé — rien à faire ;
+ *  2. le libellé de championnat complet correspond (« PRM poule A2 ») ;
+ *  3. à défaut, le seul code de compétition (« DMU15-2 »), qui est unique
+ *     par engagement au sein d'un club.
+ *
+ * Aucune correspondance approximative sur les noms d'équipe : « U13F 1 » et
+ * « U13F 2 » se ressemblent trop pour qu'une distance de chaînes tranche sans
+ * risque, et se tromper d'équipe mélangerait deux calendriers.
+ */
+export function rapprocher(
+  engagement: { id: string; championnat: string; code?: string },
+  equipes: EquipeExistante[],
+): Rapprochement {
+  const base = {
+    engagementId: engagement.id,
+    code: engagement.code,
+    championnat: engagement.championnat,
+  };
+
+  const parEngagement = equipes.find((e) => e.ffbbEngagementId === engagement.id);
+  if (parEngagement) {
+    return { ...base, equipeId: parEngagement._id, equipeNom: parEngagement.nom, motif: 'engagement' };
+  }
+
+  const cible = normaliser(engagement.championnat);
+  if (cible) {
+    const parChampionnat = equipes.filter(
+      (e) => !e.ffbbEngagementId && normaliser(e.championnat) === cible,
+    );
+    if (parChampionnat.length === 1) {
+      return { ...base, equipeId: parChampionnat[0]._id, equipeNom: parChampionnat[0].nom, motif: 'championnat' };
+    }
+  }
+
+  /*
+    Comparaison par préfixe et non par premier mot : la normalisation coupe
+    « DMU15-2 » en « dmu15 2 », donc découper sur l'espace perdrait le numéro
+    de division et confondrait DMU11 avec DMU11-3.
+    L'unicité exigée juste après protège des préfixes ambigus.
+  */
+  const code = normaliser(engagement.code);
+  if (code) {
+    const parCode = equipes.filter((e) => {
+      if (e.ffbbEngagementId) return false;
+      const n = normaliser(e.championnat);
+      return n === code || n.startsWith(`${code} `);
+    });
+    if (parCode.length === 1) {
+      return { ...base, equipeId: parCode[0]._id, equipeNom: parCode[0].nom, motif: 'code' };
+    }
+  }
+
+  return { ...base, motif: 'aucun' };
+}

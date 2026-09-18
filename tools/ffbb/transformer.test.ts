@@ -18,6 +18,8 @@ import {
   nombre,
   versLignesClassement,
   versMatch,
+  normaliser,
+  rapprocher,
   type MatchSanity,
 } from './transformer.ts';
 
@@ -228,4 +230,82 @@ test('l’empreinte ne change que si le contenu change', () => {
   assert.notEqual(empreinte(a), empreinte({ rang: 1, points: 5 }));
   // Idempotence : c'est tout l'intérêt, ne pas réécrire ni rebuild pour rien.
   assert.equal(empreinte([1, 2, 3]), empreinte([1, 2, 3]));
+});
+
+test('normalisation des libellés de championnat', () => {
+  assert.equal(normaliser('DMU18-6 poule préligue F'), 'dmu18 6 poule preligue f');
+  assert.equal(normaliser('PRM Poule A2'), 'prm poule a2');
+  assert.equal(normaliser('PRM  poule   A2'), 'prm poule a2');
+  assert.equal(normaliser(null), '');
+});
+
+test('rapprochement : l’identifiant déjà posé prime', () => {
+  const r = rapprocher(
+    { id: 'E1', championnat: 'PRM Poule A2', code: 'PRM' },
+    [{ _id: 'eq-sm1', nom: 'SM1', championnat: 'Autre chose', ffbbEngagementId: 'E1' }],
+  );
+  assert.equal(r.motif, 'engagement');
+  assert.equal(r.equipeId, 'eq-sm1');
+});
+
+test('rapprochement par libellé complet, malgré casse et accents', () => {
+  const r = rapprocher(
+    { id: 'E2', championnat: 'DMU18-6 Poule Préligue F', code: 'DMU18-6' },
+    [
+      { _id: 'eq-u18m2', nom: 'U18M 2', championnat: 'DMU18-6 poule préligue F' },
+      { _id: 'eq-u18m1', nom: 'U18M 1', championnat: 'DMU18-2 poule A' },
+    ],
+  );
+  assert.equal(r.motif, 'championnat');
+  assert.equal(r.equipeId, 'eq-u18m2');
+});
+
+test('rapprochement par code quand la poule a changé en cours de saison', () => {
+  const r = rapprocher(
+    { id: 'E3', championnat: 'DMU15-2 Poule H', code: 'DMU15-2' },
+    [{ _id: 'eq-u15m1', nom: 'U15M 1', championnat: 'DMU15-2 poule D' }],
+  );
+  assert.equal(r.motif, 'code', 'la poule a bougé, le code non');
+  assert.equal(r.equipeId, 'eq-u15m1');
+});
+
+test('rapprochement : aucune correspondance plutôt qu’une mauvaise', () => {
+  // Deux équipes partagent le même code : on refuse de trancher.
+  const ambigu = rapprocher(
+    { id: 'E4', championnat: 'DMU13-3 Poule E', code: 'DMU13-3' },
+    [
+      { _id: 'a', nom: 'U13M 2', championnat: 'DMU13-3 poule E' },
+      { _id: 'b', nom: 'U13M 3', championnat: 'DMU13-3 poule E' },
+    ],
+  );
+  assert.equal(ambigu.motif, 'aucun', 'ambigu : on laisse l’humain trancher');
+
+  // Une coupe n'a pas d'équivalent saisi à la main.
+  const coupe = rapprocher({ id: 'E5', championnat: 'CRMLSM Poule A', code: 'CRMLSM' }, [
+    { _id: 'eq-sm1', nom: 'SM1', championnat: 'PRM poule A2' },
+  ]);
+  assert.equal(coupe.motif, 'aucun');
+  assert.equal(coupe.equipeId, undefined);
+});
+
+test('rapprochement : une équipe déjà rattachée n’est pas reprise', () => {
+  const r = rapprocher(
+    { id: 'E6', championnat: 'PRM Poule A2', code: 'PRM' },
+    [{ _id: 'eq-sm1', nom: 'SM1', championnat: 'PRM poule A2', ffbbEngagementId: 'AUTRE' }],
+  );
+  assert.equal(r.motif, 'aucun', 'déjà prise par un autre engagement');
+});
+
+test('rapprochement par code : DMU11 ne doit pas capter DMU11-3', () => {
+  const equipes = [
+    { _id: 'a', nom: 'U11M 1', championnat: 'DMU11 poule C' },
+    { _id: 'b', nom: 'U11M 2', championnat: 'DMU11-3 poule C' },
+  ];
+  // Le code court est ambigu par préfixe : on refuse de trancher.
+  const court = rapprocher({ id: 'E1', championnat: 'DMU11 Poule Z', code: 'DMU11' }, equipes);
+  assert.equal(court.motif, 'aucun');
+  // Le code complet, lui, ne désigne qu'une équipe.
+  const long = rapprocher({ id: 'E2', championnat: 'DMU11-3 Poule Z', code: 'DMU11-3' }, equipes);
+  assert.equal(long.motif, 'code');
+  assert.equal(long.equipeId, 'b');
 });

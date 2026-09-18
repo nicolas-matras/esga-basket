@@ -25,7 +25,8 @@
     "seed:photos": "node tools/seed/photos.mjs",
     "ffbb:sync": "node tools/ffbb/index.ts",
     "ffbb:dry": "node tools/ffbb/index.ts --dry-run",
-    "test": "node --test tools/ffbb/*.test.ts"
+    "test": "node --test tools/ffbb/*.test.ts",
+    "ffbb:migration": "node tools/ffbb/migration.ts --dry-run"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

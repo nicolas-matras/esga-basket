@@ -1,0 +1,45 @@
+# Rapprochement des équipes saisies à la main avec les engagements FFBB.
+#
+# À lancer UNE FOIS, avant la première vraie synchronisation. Déclenchement
+# manuel uniquement : ce n'est pas une opération récurrente.
+#
+# Tourne ici plutôt qu'en local pour qu'aucun jeton d'écriture Sanity ne
+# circule hors de GitHub.
+
+name: Migration FFBB (une seule fois)
+
+on:
+  workflow_dispatch:
+    inputs:
+      simulation:
+        description: 'Simulation — affiche le rapport sans rien écrire'
+        type: boolean
+        default: true
+
+concurrency:
+  group: ffbb-sync
+  cancel-in-progress: false
+
+jobs:
+  migrer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+
+      - name: Rapprocher
+        env:
+          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+          FFBB_CODE_CLUB: ARA0069090
+        run: |
+          if [ "${{ inputs.simulation }}" = "true" ]; then
+            node tools/ffbb/migration.ts --dry-run
+          else
+            node tools/ffbb/migration.ts
+          fi

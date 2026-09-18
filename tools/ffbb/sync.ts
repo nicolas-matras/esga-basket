@@ -49,6 +49,8 @@ export type Rapport = {
 type EtatPrecedent = {
   classements: Map<string, number>; // ffbbPouleId → nombre de lignes
   empreintes: Map<string, string>; // _id → empreinte
+  /** engagement FFBB → identifiant du document équipe, posé par la migration. */
+  equipesParEngagement: Map<string, string>;
 };
 
 export async function synchroniser(
@@ -206,7 +208,13 @@ export async function synchroniser(
     }
 
     // --- 3d. L'équipe --------------------------------------------------------
-    const idEquipe = `equipe.${engagement.id}`;
+    /*
+      On réutilise le document que la migration a rattaché à cet engagement.
+      Sans cette résolution, la synchro créerait une seconde équipe à côté de
+      celle saisie à la main : deux « SM1 » dans le Studio, et les photos,
+      coachs et créneaux restés sur la mauvaise.
+    */
+    const idEquipe = precedent.equipesParEngagement.get(engagement.id) ?? `equipe.${engagement.id}`;
     const donneesEquipe = {
       championnat: equipe.championnat,
       poule: equipe.poule,
@@ -266,19 +274,30 @@ export async function synchroniser(
 
 async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
   const documents = await sanity.interroger<
-    { _id: string; syncEmpreinte?: string; ffbbPouleId?: string; nbLignes?: number }[]
+    {
+      _id: string;
+      _type: string;
+      syncEmpreinte?: string;
+      ffbbPouleId?: string;
+      ffbbEngagementId?: string;
+      nbLignes?: number;
+    }[]
   >(
-    `*[defined(syncEmpreinte) || _type == "classement"]{
-       _id, syncEmpreinte, ffbbPouleId, "nbLignes": count(lignes)
+    `*[defined(syncEmpreinte) || defined(ffbbEngagementId) || _type == "classement"]{
+       _id, _type, syncEmpreinte, ffbbPouleId, ffbbEngagementId, "nbLignes": count(lignes)
      }`,
   );
   const classements = new Map<string, number>();
   const empreintes = new Map<string, string>();
+  const equipesParEngagement = new Map<string, string>();
   for (const d of documents) {
     if (d.syncEmpreinte) empreintes.set(d._id, d.syncEmpreinte);
-    if (d.ffbbPouleId && typeof d.nbLignes === 'number') {
+    if (d._type === 'classement' && d.ffbbPouleId && typeof d.nbLignes === 'number') {
       classements.set(d.ffbbPouleId, d.nbLignes);
     }
+    if (d._type === 'equipe' && d.ffbbEngagementId) {
+      equipesParEngagement.set(d.ffbbEngagementId, d._id);
+    }
   }
-  return { classements, empreintes };
+  return { classements, empreintes, equipesParEngagement };
 }
