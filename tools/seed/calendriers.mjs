@@ -84,7 +84,7 @@ export const SF1 = [
  * L'heure est exprimée en heure de Paris : la stocker en UTC ferait afficher
  * 22h30 au lieu de 20h30 une bonne partie de la saison.
  */
-export function versMatchs(lignes, { equipe, competition, prefixe, lieuDomicile = 'Gonzales' }) {
+export function versMatchs(lignes, { equipe, competition, prefixe, lieuDomicile = 'Domicile' }) {
   return lignes.map(([journee, date, heureFr, domicile, adversaire, note]) => {
     const [jour, mois] = date.split('/').map(Number);
     const annee = mois >= 8 ? 2026 : 2027;

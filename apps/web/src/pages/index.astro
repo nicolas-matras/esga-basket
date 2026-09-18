@@ -181,7 +181,7 @@ const lignes = page?.classement?.releve?.lignes ?? [];
               </p>
               <p class="heros__match-quand">
                 {dateCourte(phare.debut)} · {heure(phare.debut)} ·{' '}
-                {phare.domicile ? 'Gonzales' : (phare.lieu ?? 'Extérieur')}
+                {phare.domicile ? 'Domicile' : (phare.salle ?? 'Extérieur')}
               </p>
             </aside>
           )

@@ -211,7 +211,7 @@ export function versMatch(
     adversaire: (domicile ? r.nomEquipe2 : r.nomEquipe1) ?? 'Adversaire à confirmer',
     debut,
     domicile,
-    lieu: domicile ? 'Gonzales' : 'Extérieur',
+    lieu: domicile ? 'Domicile' : 'Extérieur',
     salle: r.salle ?? undefined,
     statut: joue ? 'termine' : 'a-venir',
     ...(joue ? { scoreEsga: scoreNous, scoreAdverse: scoreEux } : {}),

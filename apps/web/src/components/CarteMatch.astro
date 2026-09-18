@@ -29,7 +29,7 @@ const rebours = partage.jouable ? null : compteARebours(match.debut);
 const logo = match.logoAdversaireUrl ?? urlImage(match.logoAdversaire, 120);
 const competition = match.competition?.libelle ?? match.equipe?.championnat ?? '';
 
-const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} · extérieur`;
+const lieu = match.domicile ? 'Domicile' : (match.salle ?? 'Extérieur');
 ---
 
 <article
