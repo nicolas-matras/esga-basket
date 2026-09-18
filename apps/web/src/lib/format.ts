@@ -96,8 +96,14 @@ export function partageScore(m: Match): {
 } {
   const se = m.scoreEsga;
   const sa = m.scoreAdverse;
+  /*
+    Un score présent suffit : on ne demande pas en plus que `statut` vaille
+    « terminé ». Les deux sources écrivent ces champs indépendamment — la FFBB
+    remet le statut à « à venir » tant qu'elle ne publie pas de résultat, et un
+    dirigeant peut saisir le score du samedi soir sans penser au statut. Exiger
+    les deux faisait disparaître le score de l'affichage.
+  */
   const renseigne =
-    m.statut === 'termine' &&
     typeof se === 'number' &&
     typeof sa === 'number' &&
     Number.isFinite(se) &&
