@@ -1,0 +1,37 @@
+# Scores fictifs sur la 1re journée, pour voir le rendu du site avant que la
+# saison ne commence. Déclenchement manuel, et réversible.
+name: Scores de test (1re journée)
+
+on:
+  workflow_dispatch:
+    inputs:
+      retirer:
+        description: 'Retirer les scores de test au lieu de les poser'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ffbb-sync
+  cancel-in-progress: false
+
+jobs:
+  scores:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+      - name: Poser ou retirer les scores
+        env:
+          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+          NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
+        run: |
+          if [ "${{ inputs.retirer }}" = "true" ]; then
+            node tools/ffbb/scores-test.ts --retirer
+          else
+            node tools/ffbb/scores-test.ts
+          fi
