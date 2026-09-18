@@ -40,7 +40,13 @@ const journees = [...parJour.entries()].sort(([a], [b]) => a.localeCompare(b));
                   <span class="ligne__lieu">
                     {/* La FFBB renseigne « Extérieur » comme lieu : ne pas le
                         répéter derrière, on obtenait « EXTÉRIEUR · EXTÉRIEUR ». */}
-                    {m.domicile ? 'Domicile' : (m.salle ?? 'Extérieur')}
+                    {
+                      m.domicile
+                        ? 'Domicile'
+                        : m.salle && !/^\d+$/.test(m.salle)
+                          ? m.salle
+                          : 'Extérieur'
+                    }
                     {m.afficheDeLaSemaine ? ' · affiche de la semaine' : ''}
                     {m.note ? ` · ${m.note}` : ''}
                   </span>

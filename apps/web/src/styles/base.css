@@ -1,8 +1,40 @@
 /* Styles partagés par toutes les pages. Les valeurs viennent de tokens.css. */
 
+html {
+  /* Les ancres du sélecteur d'équipe glissent au lieu de sauter. Le bloc
+     prefers-reduced-motion de tokens.css remet ça à `auto`. */
+  scroll-behavior: smooth;
+}
+
 body {
   overflow-x: hidden;
 }
+
+/*
+  Apparition au défilement.
+
+  La classe n'est posée QUE par JavaScript : sans script, ou si le navigateur
+  demande moins d'animations, le contenu s'affiche normalement. Une animation
+  qui masque du contenu quand elle ne s'exécute pas est un bug, pas un effet.
+*/
+.apparait {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.6s var(--courbe),
+    transform 0.6s var(--courbe);
+}
+
+.apparait--visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* En cascade dans une grille : les cartes arrivent l'une après l'autre. */
+.apparait[data-retard='1'] { transition-delay: 0.06s; }
+.apparait[data-retard='2'] { transition-delay: 0.12s; }
+.apparait[data-retard='3'] { transition-delay: 0.18s; }
+.apparait[data-retard='4'] { transition-delay: 0.24s; }
 
 ::selection {
   background: var(--c-cta);

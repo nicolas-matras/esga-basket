@@ -171,9 +171,27 @@ const lignes = page?.classement?.releve?.lignes ?? [];
                 )}
               </header>
               <div class="heros__match-affiche">
-                <img src="/logo-esga.png" alt="" width="44" height="44" />
-                <span class="heros__match-vs">VS</span>
-                <span class="heros__match-logo" aria-hidden="true"></span>
+                {
+                  (phare.domicile
+                    ? ['/logo-esga.png', phare.logoAdversaireUrl]
+                    : [phare.logoAdversaireUrl, '/logo-esga.png']
+                  ).map((src, i) => (
+                    <>
+                      {i === 1 && <span class="heros__match-vs">VS</span>}
+                      {src ? (
+                        <img
+                          src={src}
+                          alt=""
+                          width="44"
+                          height="44"
+                          onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'heros__match-logo'}))"
+                        />
+                      ) : (
+                        <span class="heros__match-logo" aria-hidden="true"></span>
+                      )}
+                    </>
+                  ))
+                }
               </div>
               <p class="heros__match-equipes">
                 <strong>{phare.equipe?.nom}</strong> {phare.domicile ? 'reçoit' : 'se déplace à'}{' '}
@@ -181,7 +199,13 @@ const lignes = page?.classement?.releve?.lignes ?? [];
               </p>
               <p class="heros__match-quand">
                 {dateCourte(phare.debut)} · {heure(phare.debut)} ·{' '}
-                {phare.domicile ? 'Domicile' : (phare.salle ?? 'Extérieur')}
+                {
+                  phare.domicile
+                    ? 'Domicile'
+                    : phare.salle && !/^\d+$/.test(phare.salle)
+                      ? phare.salle
+                      : 'Extérieur'
+                }
               </p>
             </aside>
           )
@@ -491,6 +515,7 @@ const lignes = page?.classement?.releve?.lignes ?? [];
     border-radius: 50%;
     object-fit: contain;
     flex: none;
+    background: #fff;
   }
   .heros__match-logo {
     background: rgb(255 255 255 / 0.1);

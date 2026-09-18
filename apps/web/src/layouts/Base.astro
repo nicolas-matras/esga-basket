@@ -259,6 +259,46 @@ const titreComplet = `${titre} — ${parametres?.nom ?? 'ESGA Basket'}`;
     </footer>
 
     <script>
+      /*
+        Apparition au défilement.
+
+        Posée en JavaScript seulement : sans script, le contenu reste visible.
+        Et rien ne se déclenche si le visiteur demande moins d'animations —
+        une personne sujette au mal des transports n'a pas à subir vingt blocs
+        qui glissent.
+      */
+      const sobre = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!sobre && 'IntersectionObserver' in window) {
+        const cibles = document.querySelectorAll<HTMLElement>(
+          'main .section > .contenu > *, main .grille > *, main .carte, main .journee',
+        );
+        const vus = new WeakSet<Element>();
+        const observateur = new IntersectionObserver(
+          (entrees) => {
+            for (const e of entrees) {
+              if (!e.isIntersecting || vus.has(e.target)) continue;
+              vus.add(e.target);
+              e.target.classList.add('apparait--visible');
+              observateur.unobserve(e.target);
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
+        );
+
+        for (const cible of cibles) {
+          // Ce qui est déjà à l'écran au chargement ne doit pas clignoter.
+          const rect = cible.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.92) continue;
+          cible.classList.add('apparait');
+          const voisins = cible.parentElement?.children;
+          if (voisins) {
+            const rang = [...voisins].indexOf(cible);
+            if (rang > 0 && rang < 5) cible.dataset.retard = String(rang);
+          }
+          observateur.observe(cible);
+        }
+      }
+
       // Menu mobile : absent de la maquette, ajouté pour les petits écrans.
       const burger = document.querySelector<HTMLButtonElement>('.burger');
       const nav = document.querySelector<HTMLElement>('.nav');

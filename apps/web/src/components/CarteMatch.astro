@@ -29,7 +29,26 @@ const rebours = partage.jouable ? null : compteARebours(match.debut);
 const logo = match.logoAdversaireUrl ?? urlImage(match.logoAdversaire, 120);
 const competition = match.competition?.libelle ?? match.equipe?.championnat ?? '';
 
-const lieu = match.domicile ? 'Domicile' : (match.salle ?? 'Extérieur');
+/*
+  En déplacement, la FFBB donne parfois un identifiant de salle non résolu :
+  mieux vaut « Extérieur » qu'un code à onze chiffres.
+*/
+const salleLisible = match.salle && !/^\d+$/.test(match.salle) ? match.salle : null;
+const lieu = match.domicile ? 'Domicile' : (salleLisible ?? 'Extérieur');
+
+/*
+  L'ordre des équipes suit la convention du basket : le club qui reçoit est
+  annoncé en premier. À domicile nous ouvrons, en déplacement l'adversaire.
+*/
+const cotes = match.domicile
+  ? [
+      { nom: match.equipe?.nom ?? 'ESGA', logo: '/logo-esga.png', nous: true },
+      { nom: match.adversaire ?? 'Adversaire', logo, nous: false },
+    ]
+  : [
+      { nom: match.adversaire ?? 'Adversaire', logo, nous: false },
+      { nom: match.equipe?.nom ?? 'ESGA', logo: '/logo-esga.png', nous: true },
+    ];
 ---
 
 <article
@@ -96,25 +115,28 @@ const lieu = match.domicile ? 'Domicile' : (match.salle ?? 'Extérieur');
     ) : (
       <>
         <div class="match__affiche">
-          <span class="match__equipe-grande">{match.equipe?.nom ?? 'ESGA'}</span>
-          <span class="match__vs">VS</span>
-          <span class="match__adverse">
-            {
-              logo ? (
-                <img
-                  src={logo}
-                  alt=""
-                  width="40"
-                  height="40"
-                  loading="lazy"
-                  onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'match__logo-vide'}))"
-                />
-              ) : (
-                <span class="match__logo-vide" aria-hidden="true"></span>
-              )
-            }
-            <span class="match__equipe-grande">{match.adversaire}</span>
-          </span>
+          {
+            cotes.map((cote, i) => (
+              <>
+                {i === 1 && <span class="match__vs">VS</span>}
+                <span class:list={['match__cote', cote.nous && 'match__cote--nous']}>
+                  {cote.logo ? (
+                    <img
+                      src={cote.logo}
+                      alt=""
+                      width="40"
+                      height="40"
+                      loading="lazy"
+                      onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'match__logo-vide'}))"
+                    />
+                  ) : (
+                    <span class="match__logo-vide" aria-hidden="true"></span>
+                  )}
+                  <span class="match__equipe-grande">{cote.nom}</span>
+                </span>
+              </>
+            ))
+          }
         </div>
         <p class="match__quand">
           {dateCourte(match.debut)} · {heure(match.debut)} · {lieu}
@@ -299,6 +321,31 @@ const lieu = match.domicile ? 'Domicile' : (match.salle ?? 'Extérieur');
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: var(--e-5);
+  }
+  .match__cote {
+    display: flex;
+    align-items: center;
+    gap: var(--e-3);
+    min-width: 0;
+  }
+  /* Le côté adverse se colle au VS : les deux équipes se font face. */
+  .match__cote:last-child {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    text-align: right;
+  }
+  .match__cote img,
+  .match__cote .match__logo-vide {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex: none;
+    object-fit: contain;
+    background: #fff;
+  }
+  /* Notre équipe ressort d'un liseré : on se repère sans lire les noms. */
+  .match__cote--nous img {
+    box-shadow: 0 0 0 2px var(--c-sport);
   }
   .match__vs {
     font: 400 var(--t-n6) / 1 var(--f-titre);
