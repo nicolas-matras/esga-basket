@@ -196,7 +196,13 @@ export function versMatch(
   const joue = scoreNous !== undefined && scoreEux !== undefined;
 
   return {
-    _id: `rencontre.${r.id}`,
+    /*
+      Tiret et non point : Sanity réserve le point comme séparateur de chemin
+      (« drafts. »). Un identifiant « rencontre.123 » est accepté par l'API de
+      mutation, qui répond 200, mais le document n'est jamais créé — panne
+      silencieuse coûteuse à diagnostiquer.
+    */
+    _id: `rencontre-${r.id}`,
     _type: 'match',
     journee: nombre(r.numeroJournee),
     adversaire: (domicile ? r.nomEquipe2 : r.nomEquipe1) ?? 'Adversaire à confirmer',

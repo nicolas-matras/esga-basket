@@ -175,7 +175,7 @@ export async function synchroniser(
       const forme = calculerForme(nosMatchs);
       const avecForme = lignes.map((l) => (l.estESGA && forme ? { ...l, forme } : l));
 
-      const idDoc = `classement.${idPoule}`;
+      const idDoc = `classement-${idPoule}`;
       const marque = empreinte(avecForme);
       if (precedent.empreintes.get(idDoc) !== marque) {
         mutations.push({
@@ -227,7 +227,7 @@ export async function synchroniser(
       celle saisie à la main : deux « SM1 » dans le Studio, et les photos,
       coachs et créneaux restés sur la mauvaise.
     */
-    const idEquipe = precedent.equipesParEngagement.get(engagement.id) ?? `equipe.${engagement.id}`;
+    const idEquipe = precedent.equipesParEngagement.get(engagement.id) ?? `equipe-${engagement.id}`;
     const donneesEquipe = {
       championnat: equipe.championnat,
       poule: equipe.poule,

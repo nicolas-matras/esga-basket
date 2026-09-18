@@ -120,7 +120,7 @@ test('seules nos rencontres sont retenues', () => {
   );
   assert.equal(dom?.domicile, true);
   assert.equal(dom?.adversaire, 'ADVERSAIRE');
-  assert.equal(dom?._id, 'rencontre.999');
+  assert.equal(dom?._id, 'rencontre-999');
 
   // À l'extérieur : l'adversaire est l'équipe 1.
   const ext = versMatch(
@@ -308,4 +308,17 @@ test('rapprochement par code : DMU11 ne doit pas capter DMU11-3', () => {
   const long = rapprocher({ id: 'E2', championnat: 'DMU11-3 Poule Z', code: 'DMU11-3' }, equipes);
   assert.equal(long.motif, 'code');
   assert.equal(long.equipeId, 'b');
+});
+
+test('les identifiants n’utilisent jamais le point', () => {
+  // Sanity réserve le point comme séparateur de chemin : une mutation portant
+  // un identifiant « rencontre.123 » est acceptée (200) mais jamais appliquée.
+  const m = versMatch(
+    { id: '42', date_rencontre: '2026-09-20T20:30:00', idOrganismeEquipe1: '11150', idOrganismeEquipe2: '1', nomEquipe2: 'X' },
+    '11150',
+    { idPoule: 'P1' },
+  );
+  assert.ok(m);
+  assert.ok(!m._id.includes('.'), `identifiant interdit : ${m._id}`);
+  assert.equal(m._id, 'rencontre-42');
 });
