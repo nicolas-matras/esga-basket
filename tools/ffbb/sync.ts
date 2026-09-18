@@ -262,7 +262,16 @@ export async function synchroniser(
     noter(
       `${mutations.length} mutations à appliquer${options.simulation ? ' (simulation, rien n’est écrit)' : ''}.`,
     );
-    await sanity.muter(mutations);
+    const acquittes = await sanity.muter(mutations);
+    if (!options.simulation) {
+      // On rapporte ce que Sanity confirme, pas ce qu'on croit avoir envoyé.
+      noter(`${acquittes} mutations acquittées par Sanity.`);
+      if (acquittes < mutations.length) {
+        const message = `${mutations.length - acquittes} mutations non acquittées.`;
+        erreurs.push(message);
+        noter(`⚠ ${message}`);
+      }
+    }
   } else {
     noter('Aucun changement : rien à écrire, pas de build.');
   }
