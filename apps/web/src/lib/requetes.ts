@@ -112,12 +112,21 @@ export const REQ_MATCHS_BANDEAU = groq`*[_type == "match" && dansLeBandeau == tr
   && dateTime(debut) > dateTime(now())]
   | order(debut asc)[0...8] ${MATCH}`;
 
-export const REQ_CLASSEMENTS = groq`*[_type == "classement"] | order(misAJourLe desc){
-  _id, misAJourLe, syncSource, derniereSync,
-  competition->{ _id, libelle, "slug": slug.current, ordre, equipe->{ nom } },
+/*
+  Un classement n'a de sens que rattaché à une équipe : « Poule B » ne dit rien
+  à un parent. On remonte donc l'équipe du club qui joue dans cette poule, via
+  son ffbbPouleId, plutôt que par la référence `competition` que la synchro ne
+  renseigne pas.
+*/
+export const REQ_CLASSEMENTS = groq`*[_type == "classement"]{
+  _id, misAJourLe, syncSource, derniereSync, ffbbPouleId, ffbbCompetitionCode,
+  "equipe": *[_type == "equipe" && ffbbPouleId == ^.ffbbPouleId && visibleSurSite != false][0]{
+    _id, nom, "slug": slug.current, championnat, poule, genre, position,
+    categorie->{ libelle, ordre }
+  },
   lignes[]{ _key, rang, equipe, estESGA, points, joues, gagnes, perdus,
             pointsMarques, pointsEncaisses, difference, horsClassement, forme }
-}`;
+} | order(equipe.categorie.ordre desc, equipe.nom asc)`;
 
 export const REQ_ACTUALITES = groq`*[_type == "actualite"] | order(date desc){
   _id, titre, "slug": slug.current, date, rubrique, extrait, aLaUne,

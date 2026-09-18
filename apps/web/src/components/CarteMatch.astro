@@ -131,7 +131,7 @@ const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} 
     text-transform: uppercase;
     padding: 4px 9px;
     border-radius: var(--r-pilule);
-    background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+    background: color-mix(in srgb, var(--c-cta) 12%, transparent);
     color: var(--c-accent-texte);
   }
   .match__live {
@@ -189,8 +189,10 @@ const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} 
     display: block;
     min-width: 0;
   }
+  /* La part du club reste orange : c'est ce qui la distingue instantanément
+     de celle de l'adversaire, et la seule couleur du logo qui n'est pas bleue. */
   .rail__part--esga {
-    background: var(--c-accent);
+    background: var(--c-sport);
   }
   .rail__part--adverse {
     background: var(--brut-gris-06);
@@ -218,7 +220,7 @@ const lieu = match.domicile ? (match.lieu ?? 'Gonzales') : `${match.lieu ?? ''} 
   }
   .match__vs {
     font: 400 var(--t-n6) / 1 var(--f-titre);
-    color: var(--c-accent);
+    color: var(--c-sport);
   }
   .match__adverse {
     display: flex;

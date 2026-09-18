@@ -13,52 +13,191 @@ const page = await interroger<Entete & { titreDerniersResultats?: string; nombre
 const classements = await interroger<Classement[]>(REQ_CLASSEMENTS);
 const joues = await interroger<Match[]>(REQ_MATCHS_JOUES);
 
-// Un seul relevé par compétition : le plus récent.
-const parCompetition = new Map<string, Classement>();
+/*
+  Un seul relevé par poule : si la synchro en a laissé plusieurs, on garde le
+  plus récent. Et on écarte les classements orphelins — une poule dont aucune
+  équipe visible du club ne fait partie n'a rien à faire sur le site.
+*/
+const parPoule = new Map<string, Classement>();
 for (const c of classements) {
-  const cle = c.competition?._id ?? c._id ?? '';
-  if (!parCompetition.has(cle)) parCompetition.set(cle, c);
+  const cle = c.ffbbPouleId ?? c._id ?? '';
+  const connu = parPoule.get(cle);
+  if (!connu || (c.misAJourLe ?? '') > (connu.misAJourLe ?? '')) parPoule.set(cle, c);
 }
-const derniers = [...parCompetition.values()];
+const avecEquipe = [...parPoule.values()].filter((c) => c.equipe?.nom);
+
+/** L'ancre d'une équipe : lisible dans l'URL, stable d'une saison à l'autre. */
+const ancre = (c: Classement) =>
+  `equipe-${(c.equipe?.nom ?? c.ffbbPouleId ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+
 const aAfficher = joues.slice(0, page?.nombreResultats ?? 6);
 ---
 
-<Base titre={page?.seo?.titre ?? page?.titre ?? 'Résultats'} description={page?.seo?.description ?? page?.intro} page="resultats">
+<Base
+  titre={page?.seo?.titre ?? page?.titre ?? 'Résultats'}
+  description={page?.seo?.description ?? page?.intro}
+  page="resultats"
+>
   <EntetePage surtitre={page?.surtitre} titre={page?.titre ?? 'Résultats'} intro={page?.intro} />
 
-  <section class="section">
-    <div class="contenu">
-      {derniers.length === 0 ? (
-        <p class="mention">Aucun classement saisi pour le moment.</p>
-      ) : (
-        <div class="grille grille--large">
-          {derniers.map((c) => (
-            <div class="carte bloc-classement">
-              <TableauClassement
-                titre={c.competition?.libelle}
-                lignes={c.lignes ?? []}
-                misAJourLe={c.misAJourLe}
-                source={c.syncSource}
-              />
-            </div>
-          ))}
+  {
+    avecEquipe.length === 0 ? (
+      <section class="section">
+        <div class="contenu">
+          <p class="mention">Aucun classement disponible pour le moment.</p>
         </div>
-      )}
-    </div>
-  </section>
+      </section>
+    ) : (
+      <>
+        {/*
+          Le sélecteur d'équipe. Ce sont de vraies ancres, pas du JavaScript :
+          un lien vers /resultats#equipe-sm1 reste partageable, fonctionne sans
+          script et se retrouve dans l'historique du navigateur.
+        */}
+        <section class="section selecteur-zone">
+          <div class="contenu">
+            <h2 class="surtitre">Aller au classement de</h2>
+            <nav class="selecteur" aria-label="Choisir une équipe">
+              {avecEquipe.map((c) => (
+                <a href={`#${ancre(c)}`} class="selecteur__lien">
+                  {c.equipe?.nom}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </section>
 
-  {aAfficher.length > 0 && (
-    <section class="section section--douce">
-      <div class="contenu">
-        <h2 class="titre-2">{page?.titreDerniersResultats ?? 'Derniers résultats'}</h2>
-        <div class="grille grille--auto" style="margin-top:var(--e-9)">
-          {aAfficher.map((m) => <CarteMatch match={m} />)}
+        <section class="section">
+          <div class="contenu classements">
+            {avecEquipe.map((c) => (
+              <article class="carte bloc-classement" id={ancre(c)}>
+                <header class="bloc-classement__entete">
+                  <div>
+                    <h2 class="titre-2">{c.equipe?.nom}</h2>
+                    <p class="bloc-classement__championnat">
+                      {c.equipe?.championnat ?? c.ffbbCompetitionCode}
+                    </p>
+                  </div>
+                  {c.equipe?.position && (
+                    <span class="bloc-classement__rang chiffres">
+                      {c.equipe.position}
+                      <sup>{c.equipe.position === 1 ? 'er' : 'e'}</sup>
+                    </span>
+                  )}
+                </header>
+
+                <TableauClassement
+                  lignes={c.lignes ?? []}
+                  misAJourLe={c.misAJourLe}
+                  source={c.syncSource}
+                />
+
+                <a href="#haut" class="bloc-classement__retour mention">↑ Choisir une autre équipe</a>
+              </article>
+            ))}
+          </div>
+        </section>
+      </>
+    )
+  }
+
+  {
+    aAfficher.length > 0 && (
+      <section class="section section--douce">
+        <div class="contenu">
+          <h2 class="titre-2">{page?.titreDerniersResultats ?? 'Derniers résultats'}</h2>
+          <div class="grille grille--auto" style="margin-top:var(--e-9)">
+            {aAfficher.map((m) => (
+              <CarteMatch match={m} />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
-  )}
+      </section>
+    )
+  }
 </Base>
 
 <style>
-  .bloc-classement { padding: var(--e-8); }
+  .selecteur-zone {
+    padding-block: var(--e-8);
+    background: var(--c-fond-doux);
+    border-block: 1px solid var(--c-bordure-douce);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .selecteur {
+    display: flex;
+    gap: var(--e-3);
+    flex-wrap: wrap;
+    margin-top: var(--e-5);
+  }
+  .selecteur__lien {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    padding: 9px 15px;
+    border-radius: var(--r-pilule);
+    border: 1px solid var(--c-bordure);
+    background: var(--c-surface);
+    color: var(--c-texte-2);
+    text-decoration: none;
+    transition:
+      border-color var(--duree-rapide) var(--courbe),
+      color var(--duree-rapide) var(--courbe);
+  }
+  .selecteur__lien:hover {
+    border-color: var(--c-cta);
+    color: var(--c-cta);
+  }
+
+  .classements {
+    display: grid;
+    gap: var(--e-6);
+  }
+  .bloc-classement {
+    padding: var(--e-8);
+    /* Compense l'en-tête collant quand on saute à une ancre. */
+    scroll-margin-top: 140px;
+  }
+  .bloc-classement__entete {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--e-6);
+    margin-bottom: var(--e-7);
+  }
+  .bloc-classement__championnat {
+    margin: 6px 0 0;
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-accent-texte);
+  }
+  .bloc-classement__rang {
+    font: 400 var(--t-n3) / 1 var(--f-titre);
+    color: var(--c-cta);
+    flex: none;
+  }
+  .bloc-classement__rang sup {
+    font-size: 0.45em;
+    vertical-align: super;
+  }
+  .bloc-classement__retour {
+    display: inline-block;
+    margin-top: var(--e-6);
+    text-decoration: none;
+  }
+  .bloc-classement__retour:hover {
+    color: var(--c-cta);
+  }
+
+  @media (max-width: 640px) {
+    .selecteur-zone {
+      position: static;
+    }
+    .bloc-classement {
+      scroll-margin-top: 90px;
+    }
+  }
 </style>

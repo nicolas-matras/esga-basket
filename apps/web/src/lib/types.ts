@@ -51,7 +51,19 @@ export type Classement = {
   misAJourLe?: string;
   syncSource?: string;
   derniereSync?: string;
-  competition?: { _id?: string; libelle?: string; slug?: string; equipe?: { nom?: string } };
+  ffbbPouleId?: string;
+  ffbbCompetitionCode?: string;
+  /** L'équipe du club qui joue dans cette poule. Un classement sans elle n'est pas affichable. */
+  equipe?: {
+    _id?: string;
+    nom?: string;
+    slug?: string;
+    championnat?: string;
+    poule?: string;
+    genre?: string;
+    position?: number;
+    categorie?: { libelle?: string; ordre?: number };
+  };
   lignes?: LigneClassement[];
 };
 

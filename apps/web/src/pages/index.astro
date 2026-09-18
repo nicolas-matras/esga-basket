@@ -10,6 +10,7 @@ import {
   REQ_REGROUPEMENTS,
 } from '../lib/requetes';
 import { interroger, urlImage, type SourceImage } from '../lib/sanity';
+import { compteARebours, dateCourte, heure } from '../lib/format';
 import type { Actualite, Categorie, LigneClassement, Match } from '../lib/types';
 
 type Accueil = {
@@ -23,8 +24,9 @@ type Accueil = {
   chiffres?: { _key: string; valeur?: string; libelle?: string }[];
   badgeProchainMatch?: string;
   classement?: {
-    libelle?: string;
-    releve?: { misAJourLe?: string; source?: string; lignes?: LigneClassement[] };
+    nom?: string;
+    championnat?: string;
+    releve?: { misAJourLe?: string; syncSource?: string; lignes?: LigneClassement[] };
   };
   blocBenevole?: { surtitre?: string; titre?: string; texte?: string; libelleBouton?: string };
   blocInscription?: {
@@ -60,8 +62,20 @@ function decouperTitre(titre?: string, accent?: string) {
 }
 
 const titreDecoupe = decouperTitre(page?.titre, page?.motAccentue);
-const prochain = matchs[0];
-const suivants = matchs.slice(1, 4);
+
+/*
+  La rencontre mise en avant dans le héros.
+
+  On ne prend pas bêtement la prochaine du calendrier : avec 28 équipes, ce
+  serait le plus souvent un plateau U9 le dimanche matin. La SM1 est l'équipe
+  vitrine du club, la SF1 vient juste après. On retombe sur la prochaine venue
+  seulement si aucune des deux ne joue.
+*/
+const PRIORITE = ['SM1', 'SF1'];
+const phare =
+  PRIORITE.map((nom) => matchs.find((m) => m.equipe?.nom === nom)).find(Boolean) ?? matchs[0];
+const prochain = phare;
+const suivants = matchs.filter((m) => m._id !== phare?._id).slice(0, 3);
 const photoHeros = urlImage(page?.photo, 900, 1200);
 const lignes = page?.classement?.releve?.lignes ?? [];
 ---
@@ -128,14 +142,48 @@ const lignes = page?.classement?.releve?.lignes ?? [];
         }
       </div>
 
-      <div class="heros__media">
+      <div class="heros__visuel">
+        <div class="heros__media">
+          {
+            photoHeros ? (
+              <img src={photoHeros} alt={page?.photo?.alt ?? ''} width="900" height="1200" />
+            ) : (
+              <span class="heros__attente mention">
+                photo à fournir — équipe au Gonzales, portrait 900×1200
+              </span>
+            )
+          }
+        </div>
+
         {
-          photoHeros ? (
-            <img src={photoHeros} alt={page?.photo?.alt ?? ''} width="900" height="1200" />
-          ) : (
-            <span class="heros__attente mention">
-              photo à fournir — équipe au Gonzales, portrait 900×1200
-            </span>
+          page?.badgeProchainMatch && (
+            <span class="heros__pastille-offre">{page.badgeProchainMatch}</span>
+          )
+        }
+
+        {
+          phare && (
+            <aside class="heros__match">
+              <header class="heros__match-entete">
+                <span class="surtitre">Prochain match</span>
+                {compteARebours(phare.debut) && (
+                  <span class="heros__match-rebours">{compteARebours(phare.debut)}</span>
+                )}
+              </header>
+              <div class="heros__match-affiche">
+                <img src="/logo-esga.png" alt="" width="44" height="44" />
+                <span class="heros__match-vs">VS</span>
+                <span class="heros__match-logo" aria-hidden="true"></span>
+              </div>
+              <p class="heros__match-equipes">
+                <strong>{phare.equipe?.nom}</strong> {phare.domicile ? 'reçoit' : 'se déplace à'}{' '}
+                {phare.adversaire}
+              </p>
+              <p class="heros__match-quand">
+                {dateCourte(phare.debut)} · {heure(phare.debut)} ·{' '}
+                {phare.domicile ? 'Gonzales' : (phare.lieu ?? 'Extérieur')}
+              </p>
+            </aside>
           )
         }
       </div>
@@ -176,13 +224,13 @@ const lignes = page?.classement?.releve?.lignes ?? [];
       <section class="section section--douce">
         <div class="contenu">
           <div class="entete-section">
-            <h2 class="titre-2">Classement {page?.classement?.libelle}</h2>
+            <h2 class="titre-2">Classement {page?.classement?.nom} · {page?.classement?.championnat}</h2>
             <a href="/resultats" class="lien-fleche">Tous les classements ↗</a>
           </div>
           <TableauClassement
             lignes={lignes}
             misAJourLe={page?.classement?.releve?.misAJourLe}
-            source={page?.classement?.releve?.source}
+            source={page?.classement?.releve?.syncSource}
             compact
           />
         </div>
@@ -360,9 +408,9 @@ const lignes = page?.classement?.releve?.lignes ?? [];
     text-wrap: balance;
     animation: monter 0.9s 0.06s ease both;
   }
-  /* Le mot que le club choisit de mettre en couleur. */
+  /* Le mot que le club met en avant, dans le bleu du club. */
   .heros__accent {
-    color: var(--c-accent);
+    color: var(--c-titre-accent);
   }
   .heros__chapo {
     font: 400 var(--t-chapo) / var(--t-chapo-lh) var(--f-texte);
@@ -379,6 +427,91 @@ const lignes = page?.classement?.releve?.lignes ?? [];
     margin-top: 28px;
     animation: monter 0.9s 0.2s ease both;
   }
+  /* La photo et ce qui se pose dessus : pastille d'offre et carte du match. */
+  .heros__visuel {
+    position: relative;
+    animation: monter 0.9s 0.26s ease both;
+  }
+  .heros__pastille-offre {
+    position: absolute;
+    top: -14px;
+    right: -10px;
+    z-index: 2;
+    width: 116px;
+    height: 116px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--c-sport);
+    color: #fff;
+    padding: 10px;
+    font: 700 var(--t-etiquette) / 1.35 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    box-shadow: 0 10px 28px rgb(242 106 36 / 0.36);
+  }
+  .heros__match {
+    position: absolute;
+    left: -18px;
+    bottom: -26px;
+    z-index: 2;
+    width: min(320px, 84%);
+    background: var(--c-fond-encre);
+    color: #fff;
+    border-radius: var(--r-xl);
+    padding: var(--e-7);
+    box-shadow: var(--o-carte-survol);
+  }
+  .heros__match-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e-4);
+  }
+  .heros__match .surtitre {
+    color: #fff;
+  }
+  .heros__match-rebours {
+    font: 700 var(--t-etiquette) / 1 var(--f-mono);
+    letter-spacing: var(--ls-etiquette);
+    text-transform: uppercase;
+    color: var(--c-sport);
+  }
+  .heros__match-affiche {
+    display: flex;
+    align-items: center;
+    gap: var(--e-5);
+    margin: var(--e-6) 0;
+  }
+  .heros__match-affiche img,
+  .heros__match-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: contain;
+    flex: none;
+  }
+  .heros__match-logo {
+    background: rgb(255 255 255 / 0.1);
+    border: 1px dashed rgb(255 255 255 / 0.28);
+  }
+  .heros__match-vs {
+    font: 400 var(--t-n7) / 1 var(--f-titre);
+    color: var(--c-sport);
+  }
+  .heros__match-equipes {
+    margin: 0;
+    font: 500 var(--t-xs) / 1.5 var(--f-texte);
+    color: #fff;
+  }
+  .heros__match-quand {
+    margin: 6px 0 0;
+    font: 400 var(--t-mono-corps) / 1.5 var(--f-mono);
+    text-transform: uppercase;
+    color: var(--brut-gris-08);
+  }
+
   .heros__media {
     aspect-ratio: 3 / 4;
     border-radius: var(--r-2xl);
@@ -388,7 +521,6 @@ const lignes = page?.classement?.releve?.lignes ?? [];
     place-items: center;
     overflow: hidden;
     box-shadow: var(--o-carte);
-    animation: monter 0.9s 0.26s ease both;
   }
   .heros__media img {
     width: 100%;
@@ -530,7 +662,20 @@ const lignes = page?.classement?.releve?.lignes ?? [];
     }
     .heros__media {
       aspect-ratio: 4 / 3;
+    }
+    .heros__visuel {
       order: -1;
+      margin-bottom: 42px;
+    }
+    .heros__match {
+      left: 0;
+      right: 0;
+      width: auto;
+    }
+    .heros__pastille-offre {
+      width: 94px;
+      height: 94px;
+      right: 0;
     }
   }
 </style>

@@ -133,10 +133,29 @@ async function principal() {
     ['Réglages', [parametres]],
   ];
 
+  /*
+    Champs portant une image posée par `pnpm seed:photos` ou par un dirigeant.
+    Un `createOrReplace` les effacerait : c'est exactement ce qui a fait
+    disparaître toutes les photos du site une fois. On crée puis on patche les
+    seuls champs textuels, ce qui laisse les images en place.
+  */
+  const CHAMPS_IMAGE = ['photo', 'photos', 'image', 'portrait', 'logo'];
+
   let total = 0;
   for (const [titre, documents] of lots) {
     if (documents.length > 0) {
-      await muter(documents.map((doc) => ({ createOrReplace: doc })));
+      await muter(
+        documents.flatMap((doc) => {
+          const sansImages = Object.fromEntries(
+            Object.entries(doc).filter(([cle]) => !CHAMPS_IMAGE.includes(cle)),
+          );
+          const { _id, _type, ...reste } = sansImages;
+          return [
+            { createIfNotExists: { _id, _type, ...reste } },
+            { patch: { id: _id, set: reste } },
+          ];
+        }),
+      );
     }
     total += documents.length;
     console.log(`  ${titre.padEnd(20)} ${String(documents.length).padStart(2)} document(s)`);

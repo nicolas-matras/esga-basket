@@ -1,0 +1,43 @@
+# Contenu de démonstration : textes initiaux et photos d'illustration.
+# Manuel uniquement — ce n'est pas une opération récurrente.
+name: Contenu de démonstration
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Que faire'
+        type: choice
+        default: 'photos'
+        options:
+          - photos
+          - photos-retirer
+          - textes
+
+concurrency:
+  group: ffbb-sync
+  cancel-in-progress: false
+
+jobs:
+  contenu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+      - name: Exécuter
+        env:
+          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+        run: |
+          case "${{ inputs.action }}" in
+            photos)          node tools/seed/photos.mjs ;;
+            photos-retirer)  node tools/seed/photos.mjs --retirer ;;
+            textes)          node tools/seed/index.mjs ;;
+          esac
+      - name: Reconstruire le site
+        if: success()
+        run: curl -fsS -X POST "${{ secrets.NETLIFY_BUILD_HOOK_URL }}?trigger_title=Contenu%20de%20demonstration"

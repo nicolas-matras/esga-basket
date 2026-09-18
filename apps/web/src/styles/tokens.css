@@ -74,8 +74,23 @@
 
 :root {
   /* ---------- Palette brute : les teintes de la maquette ---------- */
-  --brut-navy: #0c1b4a; /* 106 emplois — couleur de marque */
-  --brut-orange: #f26a24; /* 133 emplois — accent de marque */
+  --brut-navy: #0c1b4a; /* 106 emplois dans la maquette — fonds et titres */
+  /*
+    Le bleu du logo, échantillonné sur le fichier réel : #1A327B couvre 24 658
+    pixels sur les 31 983 bleus francs de l'écusson. C'est LA couleur du club,
+    plus vive que le navy de la maquette, et elle donne 11.76:1 avec du blanc.
+    Elle porte les appels à l'action.
+  */
+  --brut-bleu-genas: #1a327b;
+  --brut-bleu-genas-clair: #27439a;
+  /*
+    Le bleu du logo éclairci, teinte et saturation conservées.
+    Nécessaire pour le mot mis en avant dans le titre : le bleu du logo sur le
+    navy du titre ne donne que 1.41:1, le mot serait invisible. Celui-ci donne
+    3.27:1 contre le titre et reste à 5.06:1 sur fond clair.
+  */
+  --brut-bleu-genas-vif: #4267d7;
+  --brut-orange: #f26a24; /* 133 emplois — accent sportif */
   --brut-encre: #06091a; /* fonds très sombres (ticker, pied de page) */
   --brut-bleu-lien: #1e42a8;
 
@@ -125,11 +140,23 @@
   --c-texte-2-sur-inverse: var(--brut-gris-05);
   --c-texte-3-sur-inverse: var(--brut-gris-08);
 
-  --c-accent: var(--brut-orange); /* aplats, bordures, gros titres */
-  --c-accent-texte: var(--brut-orange-texte); /* petit texte sur fond clair */
-  --c-accent-sur-inverse: var(--brut-orange); /* 6.46:1 sur encre : conforme tel quel */
-  --c-lien: var(--brut-bleu-lien);
-  --c-lien-survol: var(--brut-orange-texte);
+  /*
+    Deux accents, deux rôles.
+    Le bleu du club domine : appels à l'action, étiquettes, liens, survols.
+    L'orange reste l'accent sportif : le mot du titre, la part ESGA du rail
+    de score, les pastilles d'état. Il signale, il ne porte plus l'interface.
+  */
+  --c-cta: var(--brut-bleu-genas);
+  --c-cta-survol: var(--brut-bleu-genas-clair);
+  --c-cta-texte: var(--brut-blanc);
+  --c-accent: var(--brut-bleu-genas); /* étiquettes, liens, bordures actives */
+  --c-accent-texte: var(--brut-bleu-genas);
+  --c-accent-sur-inverse: #8fa8ff;
+  --c-sport: var(--brut-orange); /* le rail de score et les états */
+  --c-titre-accent: var(--brut-bleu-genas-vif); /* le mot mis en avant du titre */
+  --c-sport-texte: var(--brut-orange-texte);
+  --c-lien: var(--brut-bleu-genas);
+  --c-lien-survol: var(--brut-bleu-genas-clair);
 
   --c-bordure: rgb(12 27 74 / 0.13);
   --c-bordure-forte: rgb(12 27 74 / 0.22);
@@ -195,7 +222,7 @@
   /* ---------- Ombres : empilées et très douces, jamais de flou ---------- */
   --o-carte: 0 1px 2px rgb(12 27 74 / 0.04), 0 18px 40px rgb(12 27 74 / 0.14);
   --o-carte-survol: 0 2px 4px rgb(12 27 74 / 0.05), 0 26px 60px rgb(12 27 74 / 0.2);
-  --o-accent: 0 2px 6px rgb(242 106 36 / 0.18), 0 14px 34px rgb(242 106 36 / 0.42);
+  --o-accent: 0 2px 6px rgb(26 50 123 / 0.2), 0 14px 34px rgb(26 50 123 / 0.36);
 
   /* ---------- Mouvement ---------- */
   /* ÉCART : la maquette laisse l'easing par défaut ; on passe à la courbe demandée. */
@@ -230,11 +257,17 @@
     --c-texte-2-sur-inverse: var(--brut-gris-11);
     --c-texte-3-sur-inverse: var(--brut-gris-10);
 
-    --c-accent: var(--brut-orange);
-    --c-accent-texte: var(--brut-orange); /* 6.46:1 sur l'encre : pas d'assombrissement */
-    --c-accent-sur-inverse: var(--brut-orange-texte);
+    /* Sur l'encre, le bleu du logo tombe à 1.4:1 : on l'éclaircit franchement. */
+    --c-cta: #3f5ec9;
+    --c-cta-survol: #5a76dd;
+    --c-cta-texte: var(--brut-blanc);
+    --c-accent: #8fa8ff;
+    --c-accent-texte: #8fa8ff;
+    --c-accent-sur-inverse: var(--brut-bleu-genas);
+    --c-sport: var(--brut-orange);
+    --c-sport-texte: var(--brut-orange);
     --c-lien: #8fa8ff;
-    --c-lien-survol: var(--brut-orange);
+    --c-lien-survol: #b3c4ff;
 
     --c-bordure: rgb(255 255 255 / 0.12);
     --c-bordure-forte: rgb(255 255 255 / 0.24);
@@ -267,11 +300,16 @@
   --c-texte-2-sur-inverse: var(--brut-gris-11);
   --c-texte-3-sur-inverse: var(--brut-gris-10);
 
-  --c-accent: var(--brut-orange);
-  --c-accent-texte: var(--brut-orange);
-  --c-accent-sur-inverse: var(--brut-orange-texte);
+  --c-cta: #3f5ec9;
+  --c-cta-survol: #5a76dd;
+  --c-cta-texte: var(--brut-blanc);
+  --c-accent: #8fa8ff;
+  --c-accent-texte: #8fa8ff;
+  --c-accent-sur-inverse: var(--brut-bleu-genas);
+  --c-sport: var(--brut-orange);
+  --c-sport-texte: var(--brut-orange);
   --c-lien: #8fa8ff;
-  --c-lien-survol: var(--brut-orange);
+  --c-lien-survol: #b3c4ff;
 
   --c-bordure: rgb(255 255 255 / 0.12);
   --c-bordure-forte: rgb(255 255 255 / 0.24);

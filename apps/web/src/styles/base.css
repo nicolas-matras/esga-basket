@@ -5,7 +5,7 @@ body {
 }
 
 ::selection {
-  background: var(--c-accent);
+  background: var(--c-cta);
   color: #fff;
 }
 
@@ -134,13 +134,14 @@ img {
 }
 
 .bouton--principal {
-  background: var(--c-accent);
-  color: #fff;
+  background: var(--c-cta);
+  color: var(--c-cta-texte);
   box-shadow: var(--o-accent);
 }
 
 .bouton--principal:hover {
-  color: #fff;
+  background: var(--c-cta-survol);
+  color: var(--c-cta-texte);
 }
 
 /*
@@ -148,13 +149,19 @@ img {
   l'inscription (6 emplois, avec son halo), le navy pour les actions de page
   (5 emplois, dont « Rejoindre le club » dans le héros).
 */
+/*
+  Le second bouton plein de la maquette. Il prend lui aussi le bleu du club :
+  deux bleus différents côte à côte dans un même héros se liraient comme une
+  hésitation, pas comme une hiérarchie.
+*/
 .bouton--navy {
-  background: var(--c-fond-inverse);
-  color: var(--c-texte-sur-inverse);
+  background: var(--c-cta);
+  color: var(--c-cta-texte);
 }
 
 .bouton--navy:hover {
-  color: var(--c-texte-sur-inverse);
+  background: var(--c-cta-survol);
+  color: var(--c-cta-texte);
 }
 
 .bouton--large {
