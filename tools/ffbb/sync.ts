@@ -91,12 +91,6 @@ export async function synchroniser(
     noter('Mode forcé : les empreintes sont ignorées, tout est réécrit.');
     precedent.empreintes.clear();
   }
-  if (precedent.aSupprimer.length > 0) {
-    noter(
-      `${precedent.aSupprimer.length} documents à identifiant pointé, invisibles du site : supprimés.`,
-    );
-    await sanity.muter(precedent.aSupprimer.map((id) => ({ delete: { id } })));
-  }
   noter(
     `État précédent : ${precedent.documentsLus} documents lus, ` +
       `${precedent.empreintes.size} empreintes, ` +
@@ -352,6 +346,24 @@ export async function synchroniser(
     }
   } else {
     noter('Aucun changement : rien à écrire, pas de build.');
+  }
+
+  /*
+    Ménage, en dernier. Les documents à identifiant pointé sont invisibles du
+    site mais toujours référencés par les rencontres : les supprimer avant de
+    réécrire ces références fait échouer la transaction (Sanity refuse de
+    supprimer un document référencé). On attend donc que les rencontres
+    pointent vers les bonnes équipes.
+  */
+  if (precedent.aSupprimer.length > 0 && !options.simulation) {
+    try {
+      await sanity.muter(precedent.aSupprimer.map((id) => ({ delete: { id } })));
+      noter(`${precedent.aSupprimer.length} documents fantômes supprimés.`);
+    } catch (cause) {
+      const message = `ménage incomplet : ${(cause as Error).message.slice(0, 160)}`;
+      erreurs.push(message);
+      noter(`  ⚠ ${message}`);
+    }
   }
 
   rapport.dureeMs = Date.now() - debut;
