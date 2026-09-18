@@ -362,7 +362,17 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
       nbLignes?: number;
     }[]
   >(
-    `*[defined(syncEmpreinte) || defined(ffbbEngagementId) || _type == "classement"]{
+    /*
+      Les brouillons sont exclus, et ce n'est pas un détail.
+
+      Un jeton d'écriture voit les brouillons ; le site, lui, ne lit que le
+      publié. Sans ce filtre, un document existant en brouillon était considéré
+      comme « déjà là » : la synchro patchait le brouillon au lieu de créer la
+      version publiée, et douze équipes restaient invisibles sur le site tout
+      en apparaissant présentes dans le journal.
+    */
+    `*[!(_id in path("drafts.**")) &&
+       (defined(syncEmpreinte) || defined(ffbbEngagementId) || _type == "classement")]{
        _id, _type, syncEmpreinte, ffbbPouleId, ffbbEngagementId, "nbLignes": count(lignes)
      }`,
   );
