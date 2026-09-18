@@ -133,25 +133,63 @@ Champs utiles d'un engagement :
 autres renvoient un tableau **vide, sans erreur** : le cas « coupe sans
 classement » se gère nativement, il n'y a rien à contourner.
 
-### 3.4 Ce qui n'est PAS encore vérifié
+### 3.4 La chaîne complète, vérifiée
 
-À faire avant d'écrire la synchro, pour ne pas concevoir sur des suppositions :
+```
+/items/configuration                            → jetons (tournent)
+/items/ffbbserver_organismes?filter[code][_eq]=ARA0069090   → id 11150
+/items/ffbbserver_organismes/11150?fields=engagements.*     → 28 engagements
+   chaque engagement porte idPoule et idCompetition
+/items/ffbbserver_poules/{idPoule}
+   ?fields=id,nom,id_competition.*,classements.*            → classement
+/items/ffbbserver_rencontres?filter[idPoule][_eq]={idPoule} → rencontres
+/items/ffbbserver_saisons?filter[enCours][_eq]=true         → saison active
+```
 
-- **`competition` et `poule` ne s'expansent pas** comme relations (`deep` a
-  renvoyé vide). Il faudra probablement des requêtes séparées sur
-  `ffbbserver_competitions` et `ffbbserver_poules`, filtrées par `idCompetition`
-  et `idPoule`. Non testé.
-- **Forme exacte d'une ligne de classement** (`classement[]`) : non inspectée.
-- **Récupération des rencontres** : `ffbbserver_rencontres` non interrogée.
-  À valider, notamment la présence des scores et de la feuille de match.
-- **Saison active** : comment la FFBB marque la saison en cours
-  (`saison_en_cours` existe sur l'organisme). Déterminant pour le changement
-  de saison en juillet.
+**Piège** : le champ `classement` d'un engagement **n'est pas le classement**.
+C'est une chaîne `"{idPoule}-{position}"`, donc une clé étrangère. Le vrai
+classement se lit sur la **poule**, via sa relation `classements`. Et
+`ffbbserver_classements` répond **403 en accès direct** : le passage par la
+poule n'est pas un détour, c'est le seul chemin.
 
-Collections connues (via `ffbb-api-ts`) : `ffbbserver_competitions`,
-`ffbbserver_poules`, `ffbbserver_rencontres`, `ffbbserver_organismes`,
-`ffbbserver_engagements`, `ffbbserver_saisons`, `ffbbserver_salles`,
-`ffbbserver_officiels`.
+#### Forme d'une ligne de classement
+
+Relevée sur la poule A2 de la PRM (8 lignes) :
+
+| Champ FFBB | Vers notre schéma |
+| --- | --- |
+| `position` | rang |
+| `organisme_nom` | nom de l'équipe |
+| `organisme` | id club — `=== "11150"` donne `estNotreClub` |
+| `matchJoues` | joués |
+| `gagnes`, `perdus`, `nuls` | — |
+| `points` | points |
+| `paniersMarques`, `paniersEncaisses` | points marqués / encaissés |
+| `difference`, `quotient` | différence |
+| `horsClassement`, `penalites`, `pointsInitiaux` | cas particuliers |
+| `idEngagement` | rattachement à notre équipe |
+
+⚠️ Les valeurs sont des **chaînes** (`"0"`, `"3"`), pas des nombres :
+conversion obligatoire. Au 18 septembre, les 8 lignes sont à zéro — le
+championnat n'a pas commencé, seule la `position` initiale est renseignée.
+C'est ce qui explique le « 3ᵉ » affiché sur le site officiel sans aucun match
+joué, et c'est un cas à ne pas confondre avec une réponse vide.
+
+#### Forme d'une rencontre
+
+`id`, `numeroJournee`, `date` (`2026-09-20`), `date_rencontre`
+(`2026-09-20T10:45:00`, heure locale), `horaire` (`"1045"`), `idPoule`,
+`idOrganismeEquipe1` / `idOrganismeEquipe2`, `nomEquipe1` / `nomEquipe2`,
+plus `forfaitEquipe1/2` et `defautEquipe1/2`.
+
+Le filtre porte sur la **poule**, donc on récupère les rencontres de toutes les
+équipes de la poule : il faut filtrer sur `idOrganisme* === "11150"` pour ne
+garder que les nôtres.
+
+#### Saison
+
+`ffbbserver_saisons` expose `enCours`, `actif`, `debut`, `fin`, `code`,
+`libelle` : le basculement de saison en juillet se détecte sans intervention.
 
 ## 4. Réserves à porter à ta connaissance
 
