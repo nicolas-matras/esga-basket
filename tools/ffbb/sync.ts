@@ -392,11 +392,17 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
   for (const d of documents) parType.set(d._type, (parType.get(d._type) ?? 0) + 1);
   const typesLus = [...parType].map(([k, n]) => `${k}:${n}`).join(' ');
   // Diagnostic : à quoi ressemblent réellement les identifiants ramenés ?
-  const echantillon = documents
-    .filter((d) => d._type === 'equipe')
-    .slice(0, 6)
+  const intrus = documents
+    .filter((d) => d._type === 'equipe' && !d._id.startsWith('eq-'))
+    .slice(0, 8)
     .map((d) => d._id)
     .join(' | ');
-  console.log(`    [diagnostic] identifiants d'équipe : ${echantillon}`);
+  const matchsIntrus = documents
+    .filter((d) => d._type === 'match' && !d._id.startsWith('rencontre-'))
+    .slice(0, 4)
+    .map((d) => d._id)
+    .join(' | ');
+  console.log(`    [diagnostic] équipes hors « eq- » : ${intrus || 'aucune'}`);
+  console.log(`    [diagnostic] matchs hors « rencontre- » : ${matchsIntrus || 'aucun'}`);
   return { classements, empreintes, equipesParEngagement, documentsLus: documents.length, typesLus };
 }
