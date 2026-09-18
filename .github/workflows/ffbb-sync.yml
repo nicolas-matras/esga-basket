@@ -12,10 +12,17 @@ name: Synchronisation FFBB
 
 on:
   schedule:
-    # Tous les jours à 5h UTC (6h ou 7h à Paris selon la saison).
-    - cron: '0 5 * * *'
-    # Samedi et dimanche à 19h et 22h UTC, pour les résultats du week-end.
-    - cron: '0 19,22 * * 6,0'
+    # Tous les soirs à 23h UTC.
+    #
+    # Les horaires cron de GitHub sont en UTC et ignorent l'heure d'été : une
+    # heure fixe glisse donc d'une heure dans l'année. 23h UTC tombe à minuit
+    # l'hiver et 1h du matin l'été — dans les deux cas APRÈS la mise à jour
+    # nocturne de la FFBB, observée entre 23h30 et 23h45. Choisir 22h UTC
+    # donnerait 23h l'hiver, soit trop tôt une partie de l'année.
+    - cron: '0 23 * * *'
+    # Samedi et dimanche à 20h UTC (21h ou 22h à Paris) : les résultats saisis
+    # juste après les matchs remontent le soir même.
+    - cron: '0 20 * * 6,0'
   workflow_dispatch:
     inputs:
       simulation:
