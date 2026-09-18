@@ -190,14 +190,19 @@ export const pages = [
     _id: 'pageAccueil',
     _type: 'pageAccueil',
     surtitre: 'Inscriptions ouvertes · dès 6 ans',
-    titre: 'On joue tous pour le même maillot',
-    motAccentue: 'maillot',
+    titre: 'Vingt équipes, une seule famille',
+    motAccentue: 'famille',
+    /*
+      Le chapô ne répète plus le nombre : il est déjà dans le titre.
+      Et il dit « vingt », pas « quinze » — la fiche FFBB du club recense
+      20 engagements en championnat 5×5, le chiffre de la maquette était périmé.
+    */
     intro:
-      "15 équipes, de l'école de basket aux seniors pré-régionaux. Un club formateur au cœur de l'Est lyonnais : tu viens tester un entraînement, on s'occupe du reste.",
+      "De l'école de basket aux seniors pré-régionaux. Un club formateur au cœur de l'Est lyonnais : tu viens tester un entraînement, on s'occupe du reste.",
     ctaPrincipal: { libelle: 'Rejoindre le club', url: '/inscriptions' },
     ctaVideo: { libelle: 'Le club en 40s' },
     chiffres: [
-      { _key: 'c1', valeur: '15', libelle: 'Équipes engagées' },
+      { _key: 'c1', valeur: '20', libelle: 'Équipes engagées' },
       { _key: 'c2', valeur: 'U9 → SR', libelle: 'Toutes catégories' },
       { _key: 'c3', valeur: '5·6·7 juin', libelle: 'Tournoi annuel ESGA' },
     ],
@@ -225,7 +230,7 @@ export const pages = [
     surtitre: 'Le club',
     titre: 'Un club de village, un jeu de ville',
     intro:
-      "L'Éveil Sportif Genas Azieu fait pratiquer le basket aux enfants dès 6 ans et engage 15 équipes chaque saison, de l'école de basket aux seniors pré-régionaux. Tout se joue au Complexe Sportif Marcel Gonzales, à Genas.",
+      "L'Éveil Sportif Genas Azieu fait pratiquer le basket aux enfants dès 6 ans et engage 20 équipes chaque saison, de l'école de basket aux seniors pré-régionaux. Tout se joue au Complexe Sportif Marcel Gonzales, à Genas.",
     valeurs: [
       { _key: 'v1', _type: 'etape', titre: 'Former avant tout', texte: "Des éducateurs diplômés à chaque catégorie, une progression pensée de l'U9 aux seniors." },
       { _key: 'v2', _type: 'etape', titre: 'Respect & collectif', texte: 'Arbitres, adversaires, coéquipiers, bénévoles : au club, personne ne joue seul.' },
@@ -237,7 +242,7 @@ export const pages = [
     _id: 'pageEquipes',
     _type: 'pageEquipes',
     surtitre: 'Équipes & catégories',
-    titre: '15 équipes, une seule couleur',
+    titre: '20 équipes, une seule couleur',
     intro: 'Filtre par catégorie pour voir le championnat, les créneaux et le coach de chaque équipe.',
     mentionAttente: 'créneaux et coachs à confirmer',
   },
