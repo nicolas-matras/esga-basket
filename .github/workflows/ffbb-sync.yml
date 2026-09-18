@@ -1,0 +1,57 @@
+# Synchronisation des classements et résultats FFBB.
+#
+# Tourne ici plutôt que chez Netlify : le site est statique, sans adaptateur ni
+# runtime. Y ajouter une Scheduled Function obligerait à réintroduire tout
+# l'appareillage de fonctions pour un simple cron, alors que la synchro écrit
+# dans Sanity et se contente d'appeler un build hook.
+#
+# Les horaires cron de GitHub sont en UTC. La FFBB met ses données à jour vers
+# 23h30, d'où le passage du matin.
+
+name: Synchronisation FFBB
+
+on:
+  schedule:
+    # Tous les jours à 5h UTC (6h ou 7h à Paris selon la saison).
+    - cron: '0 5 * * *'
+    # Samedi et dimanche à 19h et 22h UTC, pour les résultats du week-end.
+    - cron: '0 19,22 * * 6,0'
+  workflow_dispatch:
+    inputs:
+      simulation:
+        description: 'Simulation (n’écrit rien dans Sanity)'
+        type: boolean
+        default: false
+
+concurrency:
+  # Deux synchros en parallèle écriraient les mêmes documents.
+  group: ffbb-sync
+  cancel-in-progress: false
+
+jobs:
+  synchroniser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+
+      - name: Tests du parseur
+        run: node --test tools/ffbb/*.test.ts
+
+      - name: Synchroniser
+        env:
+          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+          NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
+          FFBB_CODE_CLUB: ARA0069090
+        run: |
+          if [ "${{ inputs.simulation }}" = "true" ]; then
+            node tools/ffbb/index.ts --dry-run
+          else
+            node tools/ffbb/index.ts
+          fi
