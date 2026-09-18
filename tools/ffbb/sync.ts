@@ -391,5 +391,12 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
   const parType = new Map<string, number>();
   for (const d of documents) parType.set(d._type, (parType.get(d._type) ?? 0) + 1);
   const typesLus = [...parType].map(([k, n]) => `${k}:${n}`).join(' ');
+  // Diagnostic : à quoi ressemblent réellement les identifiants ramenés ?
+  const echantillon = documents
+    .filter((d) => d._type === 'equipe')
+    .slice(0, 6)
+    .map((d) => d._id)
+    .join(' | ');
+  console.log(`    [diagnostic] identifiants d'équipe : ${echantillon}`);
   return { classements, empreintes, equipesParEngagement, documentsLus: documents.length, typesLus };
 }
