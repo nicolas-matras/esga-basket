@@ -15,6 +15,10 @@ on:
         description: 'Simulation — affiche le rapport sans rien écrire'
         type: boolean
         default: true
+      purger:
+        description: 'Supprimer les rencontres saisies à la main (la FFBB devient la seule source)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ffbb-sync
@@ -38,8 +42,7 @@ jobs:
           SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
           FFBB_CODE_CLUB: ARA0069090
         run: |
-          if [ "${{ inputs.simulation }}" = "true" ]; then
-            node tools/ffbb/migration.ts --dry-run
-          else
-            node tools/ffbb/migration.ts
-          fi
+          ARGS=""
+          [ "${{ inputs.simulation }}" = "true" ] && ARGS="$ARGS --dry-run"
+          [ "${{ inputs.purger }}" = "true" ] && ARGS="$ARGS --purger-manuels"
+          node tools/ffbb/migration.ts $ARGS

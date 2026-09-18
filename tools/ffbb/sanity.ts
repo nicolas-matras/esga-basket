@@ -9,7 +9,8 @@
 export type Mutation =
   | { createOrReplace: Record<string, unknown> }
   | { patch: { id: string; set?: Record<string, unknown>; unset?: string[] } }
-  | { createIfNotExists: Record<string, unknown> };
+  | { createIfNotExists: Record<string, unknown> }
+  | { delete: { id: string } };
 
 export class ErreurSanity extends Error {}
 

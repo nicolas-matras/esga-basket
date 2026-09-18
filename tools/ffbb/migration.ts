@@ -36,6 +36,17 @@ function lireEnv(): Record<string, string> {
 
 const env = lireEnv();
 const simulation = process.argv.includes('--dry-run');
+/*
+  Purge des rencontres saisies à la main.
+
+  Justifiée par le contrôle croisé (tools/ffbb/comparaison.ts) : sur les 56
+  rencontres transcrites depuis les feuilles photographiées, 6 divergeaient de
+  la FFBB, dont 3 impossibles — un même adversaire joué deux fois du même côté
+  dans un championnat aller-retour. La FFBB, elle, est cohérente sur les trois
+  compétitions. La saisie manuelle n'est donc pas une source alternative à
+  conserver, c'est une transcription fautive à remplacer.
+*/
+const purger = process.argv.includes('--purger-manuels');
 const journal = (m: string) => console.log(m);
 
 const projectId = env.PUBLIC_SANITY_PROJECT_ID ?? env.SANITY_PROJECT_ID;
@@ -138,7 +149,22 @@ journal(
   `${apparies.length} rapprochées · ${orphelins.length} à créer · ${equipesSansEngagement.length} à relier à la main`,
 );
 
-// --- 5. Écriture --------------------------------------------------------------
+// --- 5. Purge éventuelle des rencontres saisies à la main --------------------
+if (purger) {
+  const manuels = await sanity.interroger<{ _id: string }[]>(
+    '*[_type == "match" && syncSource == "manuel"]{_id}',
+  );
+  journal('');
+  journal(`PURGE : ${manuels.length} rencontres saisies à la main.`);
+  if (manuels.length > 0 && !simulation) {
+    await sanity.muter(manuels.map((m) => ({ delete: { id: m._id } })));
+    journal(`  ${manuels.length} supprimées. La FFBB devient la seule source des rencontres.`);
+  } else if (manuels.length > 0) {
+    journal('  (simulation : rien supprimé)');
+  }
+}
+
+// --- 6. Écriture --------------------------------------------------------------
 const mutations: Mutation[] = apparies
   .filter((r) => r.motif !== 'engagement') // déjà rattachées : rien à écrire
   .map((r) => ({
