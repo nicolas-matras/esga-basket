@@ -56,6 +56,8 @@ type EtatPrecedent = {
   /** Diagnostic : ce que la requête d'état a réellement ramené. */
   documentsLus: number;
   typesLus: string;
+  /** Documents à identifiant « pointé », invisibles du site : à supprimer. */
+  aSupprimer: string[];
 };
 
 export async function synchroniser(
@@ -88,6 +90,12 @@ export async function synchroniser(
   if (options.forcer) {
     noter('Mode forcé : les empreintes sont ignorées, tout est réécrit.');
     precedent.empreintes.clear();
+  }
+  if (precedent.aSupprimer.length > 0) {
+    noter(
+      `${precedent.aSupprimer.length} documents à identifiant pointé, invisibles du site : supprimés.`,
+    );
+    await sanity.muter(precedent.aSupprimer.map((id) => ({ delete: { id } })));
   }
   noter(
     `État précédent : ${precedent.documentsLus} documents lus, ` +
@@ -352,7 +360,7 @@ export async function synchroniser(
 }
 
 async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
-  const documents = await sanity.interroger<
+  let documents = await sanity.interroger<
     {
       _id: string;
       _type: string;
@@ -388,21 +396,31 @@ async function lireEtatPrecedent(sanity: ClientSanity): Promise<EtatPrecedent> {
       equipesParEngagement.set(d.ffbbEngagementId, d._id);
     }
   }
+  /*
+    On écarte les documents dont l'identifiant contient un point.
+
+    Sanity les accepte mais les range dans un « chemin » : un lecteur non
+    authentifié — donc le site — ne les voit pas, alors qu'un jeton d'écriture
+    les remonte. Résultat : la synchro les prenait pour des documents en place
+    et patchait des fantômes, pendant que le site restait vide.
+
+    Ce sont des reliquats d'une première version qui les nommait ainsi. Ils sont
+    supprimés plus bas ; ici on refuse simplement de s'appuyer dessus.
+  */
+  const pointilles = documents.filter((d) => d._id.includes('.'));
+  documents = documents.filter((d) => !d._id.includes('.'));
+
   const parType = new Map<string, number>();
   for (const d of documents) parType.set(d._type, (parType.get(d._type) ?? 0) + 1);
   const typesLus = [...parType].map(([k, n]) => `${k}:${n}`).join(' ');
   // Diagnostic : à quoi ressemblent réellement les identifiants ramenés ?
-  const intrus = documents
-    .filter((d) => d._type === 'equipe' && !d._id.startsWith('eq-'))
-    .slice(0, 8)
-    .map((d) => d._id)
-    .join(' | ');
-  const matchsIntrus = documents
-    .filter((d) => d._type === 'match' && !d._id.startsWith('rencontre-'))
-    .slice(0, 4)
-    .map((d) => d._id)
-    .join(' | ');
-  console.log(`    [diagnostic] équipes hors « eq- » : ${intrus || 'aucune'}`);
-  console.log(`    [diagnostic] matchs hors « rencontre- » : ${matchsIntrus || 'aucun'}`);
-  return { classements, empreintes, equipesParEngagement, documentsLus: documents.length, typesLus };
+
+  return {
+    classements,
+    empreintes,
+    equipesParEngagement,
+    documentsLus: documents.length,
+    typesLus,
+    aSupprimer: pointilles.map((d) => d._id),
+  };
 }
