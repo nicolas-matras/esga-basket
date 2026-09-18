@@ -8,6 +8,7 @@ export type Match = {
   debut?: string;
   domicile?: boolean;
   lieu?: string;
+  salle?: string;
   nature?: string;
   statut?: string;
   scoreEsga?: number | null;

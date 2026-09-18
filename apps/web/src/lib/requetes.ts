@@ -76,7 +76,7 @@ export const REQ_EQUIPES = groq`*[_type == "equipe" && visibleSurSite != false] 
 
 /** Un match, tel qu'affiché partout : agenda, résultats, bandeau. */
 const MATCH = groq`{
-  _id, journee, adversaire, debut, domicile, lieu, nature, statut,
+  _id, journee, adversaire, debut, domicile, lieu, salle, nature, statut,
   scoreEsga, scoreAdverse, afficheDeLaSemaine, dansLeBandeau, note,
   logoAdversaire ${IMAGE}, logoAdversaireUrl,
   equipe->{ _id, nom, championnat },
