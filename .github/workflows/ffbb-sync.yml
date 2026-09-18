@@ -43,8 +43,10 @@ jobs:
         with:
           node-version: '24.16.0'
 
-      - name: Tests du parseur
-        run: node --test tools/ffbb/*.test.ts
+      - name: Tests
+        # TZ=UTC volontairement : c'est le fuseau des machines de build, et
+        # c'est sous celui-là qu'un bug de fuseau se manifeste.
+        run: TZ=UTC node --test tools/ffbb/*.test.ts apps/web/src/lib/*.test.ts
 
       - name: Synchroniser
         env:

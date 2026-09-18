@@ -1,4 +1,16 @@
-/** Mise en forme des dates, scores et libellés. Tout en français. */
+/**
+ * Mise en forme des dates, scores et libellés. Tout en français.
+ *
+ * TOUTES les dates sont formatées dans le fuseau de Paris, explicitement.
+ *
+ * Le site est construit sur une machine distante — Netlify et GitHub tournent
+ * en UTC — et `Date.getHours()` rend l'heure du fuseau de cette machine. Un
+ * match à 20h30 s'affichait donc 18h30 en production, et 14h30 sur une machine
+ * de développement en Amérique. Le club joue à Genas : l'heure de Paris est la
+ * seule qui ait un sens, quel que soit l'endroit d'où le site est généré.
+ */
+
+const FUSEAU = 'Europe/Paris';
 
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const MOIS = [
@@ -9,53 +21,77 @@ const MOIS_COURT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', '
 
 const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** « Sam. 26 sept » */
-export function dateCourte(iso: string | undefined | null): string {
-  if (!iso) return '';
+/** Décompose une date dans le fuseau de Paris, sans dépendre de la machine. */
+function aParis(iso: string | undefined | null) {
+  if (!iso) return null;
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${capital(JOURS[d.getDay()].slice(0, 3))}. ${d.getDate()} ${MOIS_COURT[d.getMonth()]}`;
+  if (Number.isNaN(d.getTime())) return null;
+  const parties = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: FUSEAU,
+    weekday: 'short',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  }).formatToParts(d);
+  const lire = (type: string) => parties.find((p) => p.type === type)?.value ?? '';
+  // Le jour de la semaine se déduit d'une date construite en UTC à midi :
+  // à cette heure-là, aucun décalage de fuseau ne peut changer de jour.
+  const annee = Number(lire('year'));
+  const mois = Number(lire('month'));
+  const jour = Number(lire('day'));
+  const jourSemaine = new Date(Date.UTC(annee, mois - 1, jour, 12)).getUTCDay();
+  return {
+    annee,
+    mois,
+    jour,
+    heures: Number(lire('hour')) % 24,
+    minutes: Number(lire('minute')),
+    jourSemaine,
+  };
+}
+
+/** « Sam. 26 sept. » */
+export function dateCourte(iso: string | undefined | null): string {
+  const d = aParis(iso);
+  if (!d) return '';
+  return `${capital(JOURS[d.jourSemaine].slice(0, 3))}. ${d.jour} ${MOIS_COURT[d.mois - 1]}`;
 }
 
 /** « Samedi 26 septembre » */
 export function dateLongue(iso: string | undefined | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${capital(JOURS[d.getDay()])} ${d.getDate()} ${MOIS[d.getMonth()]}`;
+  const d = aParis(iso);
+  if (!d) return '';
+  return `${capital(JOURS[d.jourSemaine])} ${d.jour} ${MOIS[d.mois - 1]}`;
 }
 
 /** « 20h30 » */
 export function heure(iso: string | undefined | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const h = d.getHours();
-  const m = d.getMinutes();
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
+  const d = aParis(iso);
+  if (!d) return '';
+  return d.minutes === 0 ? `${d.heures}h` : `${d.heures}h${String(d.minutes).padStart(2, '0')}`;
 }
 
 /** « 12 SEPT » pour les étiquettes mono des actualités. */
 export function dateEtiquette(iso: string | undefined | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${String(d.getDate()).padStart(2, '0')} ${MOIS_COURT[d.getMonth()].replace('.', '').toUpperCase()}`;
+  const d = aParis(iso);
+  if (!d) return '';
+  return `${String(d.jour).padStart(2, '0')} ${MOIS_COURT[d.mois - 1].replace('.', '').toUpperCase()}`;
 }
 
-/** Jours restants avant une échéance. Négatif si passée. */
+/** Jours restants avant une échéance, comptés en jours de Paris. */
 export function joursAvant(iso: string | undefined | null): number | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const aujourdhui = new Date();
-  aujourdhui.setHours(0, 0, 0, 0);
-  const cible = new Date(d);
-  cible.setHours(0, 0, 0, 0);
-  return Math.round((cible.getTime() - aujourdhui.getTime()) / 86_400_000);
+  const cible = aParis(iso);
+  const aujourdhui = aParis(new Date().toISOString());
+  if (!cible || !aujourdhui) return null;
+  const a = Date.UTC(cible.annee, cible.mois - 1, cible.jour);
+  const b = Date.UTC(aujourdhui.annee, aujourdhui.mois - 1, aujourdhui.jour);
+  return Math.round((a - b) / 86_400_000);
 }
 
-/** « J-3 », « Aujourd'hui », « Demain ». Null si la date est passée. */
+/** « J-3 », « Aujourd\'hui », « Demain ». Null si la date est passée. */
 export function compteARebours(iso: string | undefined | null): string | null {
   const j = joursAvant(iso);
   if (j === null || j < 0) return null;
