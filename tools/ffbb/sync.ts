@@ -139,7 +139,55 @@ export async function synchroniser(
     const equipe = versEquipe(engagement, poule);
     const etiquette = `${equipe.ffbbCompetitionCode ?? '?'} ${equipe.poule ?? ''}`.trim();
 
-    // --- 3a. Les rencontres de la poule, filtrées sur notre club ------------
+    // --- 3a. L'équipe, d'abord : les rencontres la référencent --------------------------------------------------------
+    /*
+      On réutilise le document que la migration a rattaché à cet engagement.
+      Sans cette résolution, la synchro créerait une seconde équipe à côté de
+      celle saisie à la main : deux « SM1 » dans le Studio, et les photos,
+      coachs et créneaux restés sur la mauvaise.
+    */
+    const idEquipe = precedent.equipesParEngagement.get(engagement.id) ?? `equipe-${engagement.id}`;
+    const donneesEquipe = {
+      championnat: equipe.championnat,
+      poule: equipe.poule,
+      genre: equipe.genre,
+      niveau: equipe.niveau,
+      position: equipe.position,
+      ffbbEngagementId: equipe.ffbbEngagementId,
+      ffbbPouleId: equipe.ffbbPouleId,
+      ffbbCompetitionId: equipe.ffbbCompetitionId,
+      ffbbCompetitionCode: equipe.ffbbCompetitionCode,
+    };
+    const marqueEquipe = empreinte(donneesEquipe);
+    // La création est inconditionnelle : une équipe dont l'empreinte n'a pas
+    // bougé mais qui n'existe pas encore doit quand même être créée.
+    mutations.push({
+      createIfNotExists: {
+        _id: idEquipe,
+        _type: 'equipe',
+        nom: equipe.nomPropose,
+        slug: { _type: 'slug', current: idEquipe },
+        visibleSurSite: true,
+        ordre: 999,
+      },
+    });
+    if (precedent.empreintes.get(idEquipe) !== marqueEquipe) {
+      mutations.push({
+        patch: {
+          id: idEquipe,
+          set: {
+            ...donneesEquipe,
+            syncSource: 'ffbb',
+            derniereSync: maintenant,
+            syncStatut: 'ok',
+            syncEmpreinte: marqueEquipe,
+          },
+        },
+      });
+      rapport.equipesMisesAJour += 1;
+    }
+
+    // --- 3b. Les rencontres de la poule, filtrées sur notre club ------------
     let nosMatchs: MatchSanity[] = [];
     try {
       const brutes = await ffbb.rencontres(engagement.idPoule);
@@ -200,7 +248,7 @@ export async function synchroniser(
 
     // --- 3c. Les rencontres -------------------------------------------------
     for (const match of nosMatchs) {
-      const marque = empreinte(match);
+      const marque = empreinte({ ...match, equipe: idEquipe });
       if (precedent.empreintes.get(match._id) === marque) continue;
 
       /*
@@ -210,63 +258,19 @@ export async function synchroniser(
         publie. Les remplacer effacerait le travail des dirigeants.
       */
       const { _id, _type, ...champs } = match;
-      mutations.push({ createIfNotExists: { _id, _type, ...champs, dansLeBandeau: true } });
+      // La référence vers l'équipe : sans elle le site ne sait pas à qui
+      // rattacher la rencontre, et l'agenda comme les résultats restent vides.
+      const avecEquipe = { ...champs, equipe: { _type: 'reference', _ref: idEquipe } };
+      mutations.push({ createIfNotExists: { _id, _type, ...avecEquipe, dansLeBandeau: true } });
       mutations.push({
         patch: {
           id: _id,
-          set: { ...champs, derniereSync: maintenant, syncStatut: 'ok', syncEmpreinte: marque },
+          set: { ...avecEquipe, derniereSync: maintenant, syncStatut: 'ok', syncEmpreinte: marque },
         },
       });
       rapport.rencontresMisesAJour += 1;
     }
 
-    // --- 3d. L'équipe --------------------------------------------------------
-    /*
-      On réutilise le document que la migration a rattaché à cet engagement.
-      Sans cette résolution, la synchro créerait une seconde équipe à côté de
-      celle saisie à la main : deux « SM1 » dans le Studio, et les photos,
-      coachs et créneaux restés sur la mauvaise.
-    */
-    const idEquipe = precedent.equipesParEngagement.get(engagement.id) ?? `equipe-${engagement.id}`;
-    const donneesEquipe = {
-      championnat: equipe.championnat,
-      poule: equipe.poule,
-      genre: equipe.genre,
-      niveau: equipe.niveau,
-      position: equipe.position,
-      ffbbEngagementId: equipe.ffbbEngagementId,
-      ffbbPouleId: equipe.ffbbPouleId,
-      ffbbCompetitionId: equipe.ffbbCompetitionId,
-      ffbbCompetitionCode: equipe.ffbbCompetitionCode,
-    };
-    const marqueEquipe = empreinte(donneesEquipe);
-    if (precedent.empreintes.get(idEquipe) !== marqueEquipe) {
-      // À la création seulement : le nom et la visibilité appartiennent ensuite
-      // au club, la synchro ne les réécrit plus jamais.
-      mutations.push({
-        createIfNotExists: {
-          _id: idEquipe,
-          _type: 'equipe',
-          nom: equipe.nomPropose,
-          slug: { _type: 'slug', current: idEquipe },
-          visibleSurSite: true,
-          ordre: 999,
-        },
-      });
-      mutations.push({
-        patch: {
-          id: idEquipe,
-          set: {
-            ...donneesEquipe,
-            syncSource: 'ffbb',
-            derniereSync: maintenant,
-            syncStatut: 'ok',
-            syncEmpreinte: marqueEquipe,
-          },
-        },
-      });
-      rapport.equipesMisesAJour += 1;
-    }
   }
 
   // --- 4. Écriture, en une transaction --------------------------------------
