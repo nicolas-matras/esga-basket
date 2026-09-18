@@ -336,10 +336,16 @@ export async function synchroniser(
     );
     const acquittes = await sanity.muter(mutations);
     if (!options.simulation) {
-      // On rapporte ce que Sanity confirme, pas ce qu'on croit avoir envoyé.
-      noter(`${acquittes} mutations acquittées par Sanity.`);
-      if (acquittes < mutations.length) {
-        const message = `${mutations.length - acquittes} mutations non acquittées.`;
+      /*
+        Un `createIfNotExists` visant un document déjà présent n'est pas
+        acquitté : c'est le comportement normal, pas une anomalie. On ne
+        compare donc qu'aux mutations qui doivent forcément s'appliquer,
+        sans quoi chaque exécution se terminerait en avertissement.
+      */
+      const obligatoires = mutations.filter((m) => !('createIfNotExists' in m)).length;
+      noter(`${acquittes} mutations acquittées par Sanity (${obligatoires} attendues au minimum).`);
+      if (acquittes < obligatoires) {
+        const message = `${obligatoires - acquittes} mutations n'ont pas été appliquées.`;
         erreurs.push(message);
         noter(`⚠ ${message}`);
       }
