@@ -128,6 +128,7 @@ export async function synchroniser(
     rencontre. On mémorise d'abord les identifiants rencontrés.
   */
   const adversaires = new Set<string>();
+  const sallesVues = new Set<string>();
 
   // --- 3. Un passage par engagement -----------------------------------------
   for (const engagement of engagements) {
@@ -278,6 +279,7 @@ export async function synchroniser(
     // --- 3c. Les rencontres -------------------------------------------------
     for (const match of nosMatchs) {
       if (match.idAdversaire) adversaires.add(match.idAdversaire);
+      if (match.idSalle) sallesVues.add(match.idSalle);
       const marque = empreinte({ ...match, equipe: idEquipe });
       if (precedent.empreintes.get(match._id) === marque) continue;
 
@@ -323,6 +325,27 @@ export async function synchroniser(
     } catch (cause) {
       // Un logo manquant n'est pas une raison de perdre une synchro entière.
       const message = `logos indisponibles : ${(cause as Error).message}`;
+      erreurs.push(message);
+      noter(`  ⚠ ${message}`);
+    }
+  }
+
+  // --- 3f. Les noms de salle -------------------------------------------------
+  if (sallesVues.size > 0) {
+    try {
+      const noms = await ffbb.salles([...sallesVues]);
+      noter(`${noms.size} salles nommées sur ${sallesVues.size}.`);
+      const poser = (cible: Record<string, unknown>) => {
+        const id = cible.idSalle as string | undefined;
+        const nom = id ? noms.get(id) : undefined;
+        if (nom) cible.salle = nom;
+      };
+      for (const m of mutations) {
+        if ('patch' in m && m.patch.set) poser(m.patch.set as Record<string, unknown>);
+        if ('createIfNotExists' in m) poser(m.createIfNotExists as Record<string, unknown>);
+      }
+    } catch (cause) {
+      const message = `noms de salle indisponibles : ${(cause as Error).message}`;
       erreurs.push(message);
       noter(`  ⚠ ${message}`);
     }

@@ -34,6 +34,14 @@ export class ErreurFfbb extends Error {
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** La FFBB écrit tout en capitales : « SALLE JEAN GAGET » devient « Salle Jean Gaget ». */
+function joliNom(valeur: string): string {
+  return valeur
+    .toLocaleLowerCase('fr')
+    .replace(/(^|[\s'-])([a-zà-ÿ])/g, (_, avant, lettre) => avant + lettre.toLocaleUpperCase('fr'))
+    .trim();
+}
+
 export type Journal = (message: string) => void;
 
 export class ClientFfbb {
@@ -192,6 +200,27 @@ export class ClientFfbb {
       }
     }
     return logos;
+  }
+
+  /**
+   * Les noms de salle, par lot.
+   * Le champ `salle` d'une rencontre est un identifiant, pas un libellé :
+   * l'afficher tel quel donnait « 12001000062 » sur le site.
+   */
+  async salles(ids: string[]): Promise<Map<string, string>> {
+    const noms = new Map<string, string>();
+    const uniques = [...new Set(ids.filter(Boolean))];
+    for (let i = 0; i < uniques.length; i += 60) {
+      const lot = uniques.slice(i, i + 60);
+      const salles = await this.items<{ id: string; libelle?: string | null }[]>(
+        '/items/ffbbserver_salles',
+        { 'filter[id][_in]': lot.join(','), fields: 'id,libelle', limit: String(lot.length) },
+      );
+      for (const s of salles) {
+        if (s.libelle) noms.set(String(s.id), joliNom(s.libelle));
+      }
+    }
+    return noms;
   }
 
   /** La saison active, pour détecter le changement de saison en juillet. */
