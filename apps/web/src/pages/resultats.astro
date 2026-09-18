@@ -24,7 +24,22 @@ for (const c of classements) {
   const connu = parPoule.get(cle);
   if (!connu || (c.misAJourLe ?? '') > (connu.misAJourLe ?? '')) parPoule.set(cle, c);
 }
-const avecEquipe = [...parPoule.values()].filter((c) => c.equipe?.nom);
+/*
+  Ordre d'affichage : la SM1 en tête, puis la SF1, puis les autres.
+  La SM1 est l'équipe vitrine du club ; la laisser au tri alphabétique la
+  ferait passer après la SF1 sans raison.
+*/
+const VEDETTES = ['SM1', 'SF1'];
+const avecEquipe = [...parPoule.values()]
+  .filter((c) => c.equipe?.nom)
+  .sort((a, b) => {
+    const rang = (nom?: string) => {
+      const i = VEDETTES.indexOf(nom ?? '');
+      return i === -1 ? VEDETTES.length : i;
+    };
+    const ecart = rang(a.equipe?.nom) - rang(b.equipe?.nom);
+    return ecart !== 0 ? ecart : (a.equipe?.nom ?? '').localeCompare(b.equipe?.nom ?? '');
+  });
 
 /** L'ancre d'une équipe : lisible dans l'URL, stable d'une saison à l'autre. */
 const ancre = (c: Classement) =>
