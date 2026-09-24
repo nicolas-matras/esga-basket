@@ -5,24 +5,39 @@
 # réintroduire tout l'appareillage de fonctions pour un simple cron, alors que
 # la synchro écrit dans Sanity et enchaîne sur le job de déploiement.
 #
-# Les horaires cron de GitHub sont en UTC. La FFBB met ses données à jour vers
-# 23h30, d'où le passage du matin.
+# Les horaires cron de GitHub sont en UTC, et ignorent l'heure d'été : une
+# heure fixe glisse donc d'une heure dans l'année.
 
 name: Synchronisation FFBB
 
 on:
   schedule:
-    # Tous les soirs à 23h UTC.
+    # Le calendrier suit les matchs, pas l'horloge.
     #
-    # Les horaires cron de GitHub sont en UTC et ignorent l'heure d'été : une
-    # heure fixe glisse donc d'une heure dans l'année. 23h UTC tombe à minuit
-    # l'hiver et 1h du matin l'été — dans les deux cas APRÈS la mise à jour
-    # nocturne de la FFBB, observée entre 23h30 et 23h45. Choisir 22h UTC
-    # donnerait 23h l'hiver, soit trop tôt une partie de l'année.
-    - cron: '0 23 * * *'
-    # Samedi et dimanche à 20h UTC (21h ou 22h à Paris) : les résultats saisis
-    # juste après les matchs remontent le soir même.
-    - cron: '0 20 * * 6,0'
+    # Mesuré sur dix exécutions : les données ne bougent QUE les jours de
+    # match. Les passages de semaine repartent presque toujours les mains
+    # vides. Interroger la FFBB toutes les deux heures 24h/24 coûterait neuf
+    # fois plus d'appels pour la même fraîcheur — on concentre donc les
+    # passages sur le week-end.
+    #
+    # La minute 17 n'est pas décorative : la documentation de GitHub prévient
+    # que les exécutions planifiées sont retardées aux heures de charge, et
+    # que certaines peuvent être ABANDONNÉES. La charge culmine à l'heure
+    # pile, là où tout le monde programme ses crons.
+
+    # Tous les soirs. 23h UTC tombe à minuit l'hiver et 1h du matin l'été —
+    # dans les deux cas APRÈS la consolidation nocturne de la FFBB, observée
+    # entre 23h30 et 23h45. 22h UTC donnerait 23h l'hiver, soit trop tôt une
+    # partie de l'année.
+    - cron: '17 23 * * *'
+
+    # Samedi, pendant et après les matchs : 6 passages de 12h à 22h UTC,
+    # soit 13h-23h à Paris l'hiver et 14h-minuit l'été.
+    - cron: '17 12-22/2 * * 6'
+
+    # Dimanche, où l'on joue plus tôt : 6 passages de 8h à 18h UTC,
+    # soit 9h-19h à Paris l'hiver et 10h-20h l'été.
+    - cron: '17 8-18/2 * * 0'
   workflow_dispatch:
     inputs:
       simulation:

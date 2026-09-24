@@ -1,0 +1,85 @@
+# Veille mensuelle : garder les crons vivants, et vérifier qu'ils le sont.
+#
+# GitHub désactive les workflows planifiés d'un dépôt public au bout de
+# 60 jours sans activité — c'est écrit dans leur documentation. Or la
+# synchronisation FFBB ne pousse aucun commit : elle écrit dans Sanity. Sur
+# un club de basket, personne ne touche au dépôt de juin à août. La synchro
+# s'arrêterait donc d'elle-même pendant l'été, et la saison reprendrait avec
+# un site figé, sans que rien ne le signale.
+#
+# Ce workflow écrit une ligne dans docs/veille.md une fois par mois. Le
+# compteur des 60 jours ne peut donc jamais arriver à son terme.
+#
+# `docs/**` fait partie des chemins ignorés par le déploiement : ce commit ne
+# reconstruit pas le site.
+#
+# Honnêteté sur ce montage : qu'un commit poussé par le jeton d'Action compte
+# bien comme « activité du dépôt » est l'hypothèse sur laquelle reposent tous
+# les dispositifs de ce genre, mais elle ne se vérifie qu'en attendant
+# 60 jours. D'où la seconde étape, qui surveille la synchro pour de vrai.
+
+name: Veille mensuelle
+
+on:
+  schedule:
+    # Le 5 de chaque mois. Bien plus fréquent que les 60 jours fatidiques,
+    # pour qu'un mois sauté ne soit pas dramatique.
+    - cron: '23 4 5 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  veiller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Entretenir l'activité du dépôt
+        run: |
+          mkdir -p docs
+          cat > docs/veille.md <<TEXTE
+          # Veille
+
+          Ce fichier n'a qu'un rôle : porter une date qui change.
+
+          GitHub désactive les workflows planifiés d'un dépôt public après
+          60 jours sans activité. La synchronisation FFBB n'écrit que dans
+          Sanity, jamais dans le dépôt : sans ce commit mensuel, elle
+          s'arrêterait toute seule pendant l'intersaison.
+
+          Voir .github/workflows/veille.yml.
+
+          Dernier passage : $(date -u '+%Y-%m-%d %H:%M UTC')
+          TEXTE
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/veille.md
+          git commit -m "Veille mensuelle : garder les crons actifs" || {
+            echo "::warning::Rien à committer — le fichier n'a pas changé."
+            exit 0
+          }
+          git push
+
+      - name: La synchronisation FFBB tourne-t-elle encore ?
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Un cron peut être désactivé, ou échouer en série sans que personne
+        # n'ouvre l'onglet Actions. On regarde donc la date de la dernière
+        # synchronisation RÉUSSIE. Au-delà de dix jours, quelque chose ne va
+        # pas : le job passe au rouge, et GitHub envoie un courriel.
+        run: |
+          DERNIERE=$(gh run list --workflow="Synchronisation FFBB" \
+            --status=success --limit=1 --json createdAt --jq '.[0].createdAt')
+          if [ -z "$DERNIERE" ]; then
+            echo "::error::Aucune synchronisation réussie trouvée."
+            exit 1
+          fi
+          JOURS=$(( ( $(date -u +%s) - $(date -u -d "$DERNIERE" +%s) ) / 86400 ))
+          echo "Dernière synchronisation réussie : $DERNIERE (il y a $JOURS jour(s))."
+          if [ "$JOURS" -gt 10 ]; then
+            echo "::error::Plus de 10 jours sans synchronisation réussie. Vérifier que les crons n'ont pas été désactivés : onglet Actions du dépôt."
+            exit 1
+          fi
