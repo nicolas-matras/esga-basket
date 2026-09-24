@@ -6,16 +6,18 @@
  *
  * Variables attendues (voir .env.example) :
  *   PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, SANITY_WRITE_TOKEN
- *   NETLIFY_BUILD_HOOK_URL   facultatif — sans lui, le site n'est pas reconstruit
  *   FFBB_CODE_CLUB           défaut : ARA0069090
+ *
+ * La mise en ligne n'est pas déclenchée ici : ce script écrit `a_change` dans
+ * $GITHUB_OUTPUT, et le workflow enchaîne sur .github/workflows/deployer.yml.
  *
  * Aucun jeton FFBB n'est nécessaire : ils sont publics et récupérés à chaud.
  */
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ClientFfbb } from './client.ts';
-import { ClientSanity, declencherBuild } from './sanity.ts';
+import { ClientSanity } from './sanity.ts';
 import { synchroniser, type Rapport } from './sync.ts';
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -141,21 +143,32 @@ await sanity.muter([
   },
 ]);
 
-// --- Build, uniquement si quelque chose a bougé ------------------------------
-if (!rapport.aChange) {
-  journal('Rien n’a changé : pas de build.');
-  process.exit(0);
-}
+// --- Déploiement, uniquement si quelque chose a bougé ------------------------
+/*
+  On ne déclenche plus la mise en ligne depuis ici. Ce script écrit un drapeau,
+  le workflow le lit et enchaîne sur le job de déploiement.
 
-const hook = env.NETLIFY_BUILD_HOOK_URL;
-if (!hook) {
-  journal('NETLIFY_BUILD_HOOK_URL absent : Sanity est à jour mais le site ne sera pas reconstruit.');
-  process.exit(0);
-}
+  Ce n'est pas un détour inutile. Un build hook répond 200 dès que la demande
+  est reçue — pas quand le site est en ligne. Netlify a refusé les déploiements
+  pendant plusieurs jours en répondant 200 à chaque appel, et la synchro les a
+  comptés comme des succès. Un job GitHub, lui, passe au rouge.
+*/
+journal(
+  rapport.aChange
+    ? 'Des données ont changé : le site va être remis en ligne.'
+    : 'Rien n’a changé : pas de déploiement.',
+);
 
-const ok = await declencherBuild(hook, 'Synchronisation FFBB');
-journal(ok ? 'Build Netlify déclenché.' : 'Le build hook a refusé la demande.');
+// $GITHUB_OUTPUT n'existe qu'en Action GitHub ; en local, il n'y a rien à écrire.
+const sortie = env.GITHUB_OUTPUT;
+if (sortie) appendFileSync(sortie, `a_change=${rapport.aChange}\n`);
+
 await sanity
-  .muter([{ patch: { id: 'syncStatus', set: { buildDeclenche: ok } } }])
+  /*
+    Le champ garde son nom : le renommer toucherait au schéma Sanity. Il ne dit
+    plus « le build hook a accepté » mais « un déploiement a été demandé ».
+    Son issue réelle se lit dans l'onglet Actions du dépôt.
+  */
+  .muter([{ patch: { id: 'syncStatus', set: { buildDeclenche: rapport.aChange } } }])
   .catch(() => {});
-process.exit(ok ? 0 : 1);
+process.exit(0);

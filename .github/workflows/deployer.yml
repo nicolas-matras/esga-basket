@@ -1,0 +1,85 @@
+# Construction et mise en ligne du site sur Cloudflare Pages.
+#
+# Le site est construit ICI, pas chez Cloudflare. Deux raisons :
+#
+#  1. Une seule source de vérité pour l'outillage. `pnpm/action-setup` lit le
+#     champ `packageManager` du package.json et `setup-node` lit le .nvmrc.
+#     L'image de build de Cloudflare, elle, ne sait pas déduire la version de
+#     pnpm et aurait exigé une variable PNPM_VERSION de plus à tenir à jour.
+#
+#  2. Le déploiement échoue bruyamment. L'ancien montage appelait un build hook
+#     et se contentait d'un code HTTP 200 — qui signifie « demande reçue », pas
+#     « site en ligne ». Netlify a bloqué les déploiements pendant plusieurs
+#     jours sans que rien ne le signale. Ici, si la mise en ligne échoue, le
+#     job passe au rouge.
+#
+# Appelé par : un push sur main, la synchronisation FFBB quand elle a modifié
+# quelque chose, un webhook Sanity (repository_dispatch), ou à la main.
+
+name: Déploiement
+
+on:
+  push:
+    branches: [main]
+    # Une correction de documentation ne justifie pas une mise en ligne.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'design/**'
+      - 'maquette/**'
+  workflow_dispatch:
+  workflow_call:
+  repository_dispatch:
+    types: [contenu-publie]
+
+concurrency:
+  # Si deux déploiements se présentent, seul le dernier a un intérêt :
+  # il contient déjà ce que portait le précédent.
+  group: deploiement
+  cancel-in-progress: true
+
+jobs:
+  deployer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v6
+        # Sans `version` : la valeur vient du champ `packageManager` du
+        # package.json. Deux sources de vérité finissent toujours par diverger.
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Installer
+        run: pnpm install --frozen-lockfile
+
+      - name: Construire
+        env:
+          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+          # Toute valeur autre que « production » ajoute noindex sur chaque
+          # page. Voir MISE-EN-LIGNE.md.
+          PUBLIC_ENV: production
+        run: pnpm --filter @esga/web build
+
+      - name: Vérifier que l'adresse du site est bien passée
+        # Le build ne casse plus quand PUBLIC_SITE_URL est absente ou mal
+        # saisie : il retombe sur localhost. Silencieusement. Le sitemap et les
+        # canoniques sont alors faux sur tout le site, sans que rien n'alerte.
+        run: |
+          if grep -rq "localhost:4321" apps/web/dist/sitemap-index.xml apps/web/dist/index.html; then
+            echo "::error::PUBLIC_SITE_URL est absente ou invalide : le site pointe vers localhost."
+            exit 1
+          fi
+
+      - name: Mettre en ligne
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/web/dist --project-name=esga-basket --branch=main

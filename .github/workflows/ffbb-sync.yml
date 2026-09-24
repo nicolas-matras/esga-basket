@@ -1,9 +1,9 @@
 # Synchronisation des classements et résultats FFBB.
 #
-# Tourne ici plutôt que chez Netlify : le site est statique, sans adaptateur ni
-# runtime. Y ajouter une Scheduled Function obligerait à réintroduire tout
-# l'appareillage de fonctions pour un simple cron, alors que la synchro écrit
-# dans Sanity et se contente d'appeler un build hook.
+# Tourne ici plutôt que chez l'hébergeur : le site est statique, sans
+# adaptateur ni runtime. Y ajouter une fonction planifiée obligerait à
+# réintroduire tout l'appareillage de fonctions pour un simple cron, alors que
+# la synchro écrit dans Sanity et enchaîne sur le job de déploiement.
 #
 # Les horaires cron de GitHub sont en UTC. La FFBB met ses données à jour vers
 # 23h30, d'où le passage du matin.
@@ -43,6 +43,11 @@ jobs:
   synchroniser:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      # Vrai seulement si la FFBB a réellement publié quelque chose de neuf.
+      # En simulation, le script s'arrête avant d'écrire ce drapeau : une
+      # simulation ne met donc jamais le site en ligne.
+      a_change: ${{ steps.synchroniser.outputs.a_change }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,14 +61,34 @@ jobs:
         run: TZ=UTC node --test tools/ffbb/*.test.ts apps/web/src/lib/*.test.ts
 
       - name: Synchroniser
+        id: synchroniser
         env:
           PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
           PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
           SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
-          NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
           FFBB_CODE_CLUB: ARA0069090
         run: |
           ARGS=""
           [ "${{ inputs.simulation }}" = "true" ] && ARGS="$ARGS --dry-run"
           [ "${{ inputs.forcer }}" = "true" ] && ARGS="$ARGS --forcer"
           node tools/ffbb/index.ts $ARGS
+
+      - name: Ce qui va suivre
+        # Le drapeau `a_change` commande tout l'enchaînement. On l'affiche au
+        # lieu de le supposer : « false » veut dire que la synchro a bien
+        # tranché, une valeur VIDE voudrait dire qu'elle n'a rien écrit du tout
+        # — donc que le site ne sera plus jamais remis en ligne, en silence.
+        run: |
+          case "${{ steps.synchroniser.outputs.a_change }}" in
+            true)  echo "Des données ont changé : le job « deployer » va suivre." ;;
+            false) echo "Rien n'a changé : pas de déploiement. C'est le cas normal." ;;
+            *)     echo "::warning::Drapeau a_change vide : le site ne sera pas remis en ligne. Vérifier tools/ffbb/index.ts." ;;
+          esac
+
+  # Mise en ligne, seulement si la synchro a modifié quelque chose. Reconstruire
+  # un site identique à chaque nuit consommerait le quota de builds pour rien.
+  deployer:
+    needs: synchroniser
+    if: needs.synchroniser.outputs.a_change == 'true'
+    uses: ./.github/workflows/deployer.yml
+    secrets: inherit

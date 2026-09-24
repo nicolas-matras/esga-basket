@@ -38,6 +38,8 @@ jobs:
             photos-retirer)  node tools/seed/photos.mjs --retirer ;;
             textes)          node tools/seed/index.mjs ;;
           esac
-      - name: Reconstruire le site
-        if: success()
-        run: curl -fsS -X POST "${{ secrets.NETLIFY_BUILD_HOOK_URL }}?trigger_title=Contenu%20de%20demonstration"
+
+  deployer:
+    needs: contenu
+    uses: ./.github/workflows/deployer.yml
+    secrets: inherit

@@ -17,7 +17,7 @@ const REFERER = 'https://competitions.ffbb.com/';
 
 /** Le club se présente : si la FFBB veut nous joindre, elle sait où. */
 const USER_AGENT =
-  'ESGA-Basket-Sync/1.0 (site du club Eveil Sportif Genas Azieu; +https://esga-genas.netlify.app; president.esgabasket@gmail.com)';
+  'ESGA-Basket-Sync/1.0 (site du club Eveil Sportif Genas Azieu; +https://esga-basket.pages.dev; president.esgabasket@gmail.com)';
 
 const DELAI_ENTRE_REQUETES_MS = 1000;
 const TENTATIVES_MAX = 4;

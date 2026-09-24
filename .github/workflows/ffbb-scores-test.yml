@@ -28,10 +28,14 @@ jobs:
           PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
           PUBLIC_SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
           SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
-          NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
         run: |
           if [ "${{ inputs.retirer }}" = "true" ]; then
             node tools/ffbb/scores-test.ts --retirer
           else
             node tools/ffbb/scores-test.ts
           fi
+
+  deployer:
+    needs: scores
+    uses: ./.github/workflows/deployer.yml
+    secrets: inherit

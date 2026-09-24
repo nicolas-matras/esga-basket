@@ -91,10 +91,3 @@ export class ClientSanity {
   }
 }
 
-/** Déclenche un build Netlify. Appelé uniquement si quelque chose a changé. */
-export async function declencherBuild(url: string, motif: string): Promise<boolean> {
-  const reponse = await fetch(`${url}?trigger_title=${encodeURIComponent(motif)}`, {
-    method: 'POST',
-  });
-  return reponse.ok;
-}

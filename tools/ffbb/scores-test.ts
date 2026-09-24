@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ClientSanity, declencherBuild, type Mutation } from './sanity.ts';
+import { ClientSanity, type Mutation } from './sanity.ts';
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -111,8 +111,6 @@ const acquittes = await sanity.muter(mutations);
 console.log('');
 console.log(`${acquittes} mutations acquittées par Sanity.`);
 
-const hook = env.NETLIFY_BUILD_HOOK_URL;
-if (hook) {
-  const ok = await declencherBuild(hook, 'Scores de test 1re journée');
-  console.log(ok ? 'Build Netlify déclenché.' : 'Le build hook a refusé la demande.');
-}
+// La mise en ligne est enchaînée par le workflow, pas appelée d'ici :
+// voir .github/workflows/ffbb-scores-test.yml.
+console.log('Sanity est à jour. Le déploiement suit dans le job suivant.');

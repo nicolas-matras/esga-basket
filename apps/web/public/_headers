@@ -1,0 +1,22 @@
+# En-têtes HTTP servis par Cloudflare Pages.
+#
+# Équivalent des blocs [[headers]] de l'ancien netlify.toml. Astro recopie
+# tel quel ce qui se trouve dans public/, le fichier se retrouve donc à la
+# racine du site où Cloudflare va le lire.
+#
+# Les règles s'appliquent dans l'ordre : une règle plus bas l'emporte sur une
+# règle plus haut pour un même en-tête. D'où le général d'abord, le particulier
+# ensuite.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+
+# Polices et fichiers générés par Astro : leur nom contient une empreinte du
+# contenu. Un fichier donné ne changera donc jamais — on peut le garder un an.
+/polices/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
