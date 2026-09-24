@@ -78,17 +78,18 @@ jobs:
           fi
 
       - name: Mettre en ligne
-        id: miseEnLigne
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # npm, et non le pnpm du dépôt : l'action installe wrangler à la
-          # volée, et pnpm 12 refuse le script de build de `workerd` tant
-          # qu'il n'est pas approuvé. Cette installation ne concerne que
-          # l'outil de déploiement, jamais les dépendances du site.
-          packageManager: npm
-          command: pages deploy apps/web/dist --project-name=esga-basket --branch=main
-
-      - name: Adresse du déploiement
-        run: echo "En ligne --> ${{ steps.miseEnLigne.outputs.deployment-url }}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # On n'utilise pas cloudflare/wrangler-action : elle installe wrangler
+        # dans le repertoire courant, or c'est ici un monorepo pnpm. pnpm y
+        # refuse le script de build de `workerd`, et npm s'y casse les dents sur
+        # l'arborescence que pnpm a posee. Le probleme n'est ni l'un ni l'autre
+        # gestionnaire : c'est d'installer un outil de deploiement au milieu des
+        # dependances du site. On l'installe donc ailleurs, et on ne passe au
+        # depot que le chemin du dossier a envoyer.
+        run: |
+          mkdir -p "$RUNNER_TEMP/deploiement"
+          cd "$RUNNER_TEMP/deploiement"
+          npx --yes wrangler@4 pages deploy "$GITHUB_WORKSPACE/apps/web/dist" \
+            --project-name=esga-basket --branch=main
