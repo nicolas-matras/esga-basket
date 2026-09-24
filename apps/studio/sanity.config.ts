@@ -24,11 +24,14 @@ export default defineConfig({
   plugins: [
     structureTool({ structure }),
     presentationTool({
-      previewUrl: {
-        origin: urlPreview,
-        preview: '/',
-        previewMode: { enable: '/api/preview/activer' },
-      },
+      /*
+        Pas de `previewMode` : il appelle une route serveur pour basculer le
+        site en mode brouillon, or le site est statique (`output: 'static'`,
+        sans adaptateur) et n'expose aucune route. L'onglet Presentation
+        affiche donc le site PUBLIE a cote de l'edition, ce qui est utile,
+        mais ne rend pas les brouillons non publies.
+      */
+      previewUrl: { origin: urlPreview, preview: '/' },
     }),
     visionTool({ defaultApiVersion: '2025-02-19' }),
   ],

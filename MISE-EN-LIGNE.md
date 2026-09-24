@@ -121,14 +121,40 @@ que le lendemain. Pour la voir tout de suite :
 Sans ce webhook, il faut lancer « Déploiement » à la main après chaque saisie —
 ce qui sera vite abandonné par les bénévoles.
 
-## 6. Déployer le Studio
+## 6. Le back-office
+
+Le Studio Sanity est en ligne : **https://esga-basket.sanity.studio**
+
+C'est là que le club saisit actualités, photos, tarifs, coachs et créneaux.
+Il n'est pas hébergé avec le site — Sanity le sert gratuitement.
+
+Pour le redéployer après une modification du schéma :
 
 ```bash
-pnpm --filter @esga/studio deploy
+pnpm --filter @esga/studio run deploy
 ```
 
-Il sera servi sur `https://<nom-choisi>.sanity.studio`. Penser ensuite à mettre
-`PUBLIC_SANITY_STUDIO_URL` et `SANITY_STUDIO_PREVIEW_URL` à jour dans les `.env`.
+⚠️ `run` est obligatoire : `pnpm deploy` est une commande interne de pnpm, qui
+masquerait notre script.
+
+### Donner accès à un bénévole
+
+**[sanity.io/manage](https://sanity.io/manage) → projet ESGA Basket → Members →
+Invite member.** Deux rôles utiles :
+
+| Rôle | Peut |
+| --- | --- |
+| `editor` | tout créer, modifier et publier — le rôle des bénévoles |
+| `administrator` | en plus : gérer les membres, les jetons, le projet |
+
+Le plan gratuit inclut **20 sièges**, largement de quoi couvrir un bureau.
+
+### L'onglet Presentation
+
+Il affiche le site publié à côté de l'édition. Il ne rend **pas** les brouillons
+non publiés : cela demanderait une route serveur pour basculer le site en mode
+brouillon, or le site est statique et n'en expose aucune. Publier reste donc le
+seul moyen de voir un changement — après la reconstruction, qui prend une minute.
 
 ## 7. Le domaine
 
