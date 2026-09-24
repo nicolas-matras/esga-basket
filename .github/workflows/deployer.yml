@@ -78,8 +78,17 @@ jobs:
           fi
 
       - name: Mettre en ligne
+        id: miseEnLigne
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # npm, et non le pnpm du dépôt : l'action installe wrangler à la
+          # volée, et pnpm 12 refuse le script de build de `workerd` tant
+          # qu'il n'est pas approuvé. Cette installation ne concerne que
+          # l'outil de déploiement, jamais les dépendances du site.
+          packageManager: npm
           command: pages deploy apps/web/dist --project-name=esga-basket --branch=main
+
+      - name: Adresse du déploiement
+        run: echo "En ligne --> ${{ steps.miseEnLigne.outputs.deployment-url }}"
