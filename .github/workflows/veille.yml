@@ -83,3 +83,34 @@ jobs:
             echo "::error::Plus de 10 jours sans synchronisation réussie. Vérifier que les crons n'ont pas été désactivés : onglet Actions du dépôt."
             exit 1
           fi
+
+      - name: Le contenu publié arrive-t-il bien en ligne ?
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Publier dans le Studio ne met le site à jour que si le webhook Sanity
+        # fonctionne. Or il peut cesser de l'être sans bruit : jeton GitHub
+        # expiré (un an maximum), webhook supprimé, ou désactivé par Sanity
+        # après des échecs répétés.
+        #
+        # On ne teste pas le webhook lui-même — cela demanderait un jeton de
+        # gestion Sanity de plus. On teste son EFFET, qui est ce qui compte :
+        # existe-t-il du contenu éditorial publié APRÈS le dernier déploiement
+        # réussi ? Le dataset est public, aucun secret n'est nécessaire.
+        run: |
+          FILTRE='*[!(_type in ["match","classement","syncStatus"]) && !(_id in path("drafts.**"))] | order(_updatedAt desc)[0]._updatedAt'
+          CONTENU=$(curl -sG "https://cftz7b5y.api.sanity.io/v2024-01-01/data/query/production" \
+            --data-urlencode "query=$FILTRE" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("result") or "")')
+          DEPLOI=$(gh run list --workflow="Déploiement" --status=success \
+            --limit=1 --json createdAt --jq '.[0].createdAt')
+          echo "Dernière publication de contenu : ${CONTENU:-aucune}"
+          echo "Dernier déploiement réussi      : ${DEPLOI:-aucun}"
+          if [ -z "$CONTENU" ] || [ -z "$DEPLOI" ]; then
+            echo "Comparaison impossible, on ne conclut rien."
+            exit 0
+          fi
+          ECART=$(( ( $(date -u -d "$CONTENU" +%s) - $(date -u -d "$DEPLOI" +%s) ) / 86400 ))
+          if [ "$ECART" -gt 2 ]; then
+            echo "::error::Du contenu publié il y a $ECART jour(s) n'a jamais été mis en ligne. Le webhook Sanity ne fonctionne probablement plus : vérifier sanity.io/manage > API > Webhooks, et la date d'expiration du jeton GitHub."
+            exit 1
+          fi
+          echo "Le contenu publié est bien en ligne."
